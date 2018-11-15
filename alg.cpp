@@ -140,6 +140,7 @@ void Alg::swapChain() {
 
 void Alg::qLearning() {
     outputResult("Q-Learning");
+    // This is a new line of algorithm.
     run = true;
 }
 
