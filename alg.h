@@ -31,7 +31,6 @@ private:
     vector<bool> checked;
     void outputResult(const char *algMethod);
     bool occupied(double d, task& t, VN& chain);
-    bool available(double d, task& t, VN& chain);
 };
 
 

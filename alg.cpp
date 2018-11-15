@@ -75,34 +75,40 @@ void Alg::simpleGreedy() {
     run = true;
 }
 
-bool Alg::available(double d, task& t, VN& chain) {
+static int countdd = 0;
 
-    outputResult("Optimal_Occupied");
+bool Alg::occupied(double d, task& t, VN& chain) {
+    if (d < 0.37)
+        countdd = countdd;
+    countdd++;
+//    printf("line 82----%d\n", countdd);
     if (map[t.nodeId][bottleNeckPair.second] < d && map[t.nodeId][bottleNeckPair.second] >= 0) {
         chain.push_back(workerList[bottleNeckPair.second]);
         chain.push_back(t);
-        printf("task %d matches worker %d\n", t.nodeId, bottleNeckPair.second);
+        countdd--;
+//        printf("line 87----%d\n", countdd);
         return true;
-    }
-    return false;
-}
+    }           // available
 
-bool Alg::occupied(double d, task& t, VN& chain) {
-    for (auto &worker : workerList) {
-        if (!checked[worker.nodeId] &&
-                map[t.nodeId][worker.nodeId] < d && map[t.nodeId][worker.nodeId] >= 0) {
+    for (auto& worker : workerList) {
+        if (checked[worker.nodeId])
+            continue;
+        if (map[t.nodeId][worker.nodeId] < d && map[t.nodeId][worker.nodeId] >= 0) {
             checked[worker.nodeId] = true;
             task next = workerMatchedList[worker.nodeId];
-            if (available(d, next, chain) || occupied(d, next, chain)) {
-                printf("ok\n");
+            if (occupied(d, next, chain)) {
                 chain.push_back(worker);
                 chain.push_back(t);
                 checked[worker.nodeId] = false;
+                countdd--;
+//                printf("line 102----%d\n", countdd);
                 return true;
             }
             checked[worker.nodeId] = false;
         }
     }
+    countdd--;
+//    printf("line 109----%d\n", countdd);
     return false;
 }
 
@@ -128,8 +134,7 @@ void Alg::swapChain() {
                 bottleNeckPair = make_pair(i, workerId);
                 bottleNeck = map[i][workerId];
             } else {
-                bottleNeckPair = (bottleNeck > map[i][workerId] ?
-                        bottleNeckPair : make_pair(i, workerId));
+                bottleNeckPair = (bottleNeck > map[i][workerId] ? bottleNeckPair : make_pair(i, workerId));
                 bottleNeck = (bottleNeck > map[i][workerId] ? bottleNeck : map[i][workerId]);
             }
         }
