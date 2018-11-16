@@ -28,15 +28,15 @@ void freeMemory(int len) {
 
 int main(int argc, const char* argv[]) {
 
-    int len = 30, lambda = 3, upperBound = 10;
+    int len = 20, lambda = 3, upperBound = 7;
     VN nodeList;
     VT taskList;
     VW workerList;
 
-//    DataProcess::generateSequence("../syntheticData/sequence.dat", len, lambda, upperBound);
+    DataProcess::generateSequence("../syntheticData/sequence.dat", len, lambda, upperBound);
     DataProcess::readSequence("../syntheticData/sequence.dat", nodeList);
     DataProcess::splitSequence(nodeList, taskList, workerList);
-//    DataProcess::generateMatrix("../syntheticData/matrix.dat", taskList, workerList);
+    DataProcess::generateMatrix("../syntheticData/matrix.dat", taskList, workerList);
     allocMemory(len);
     DataProcess::readMatrix("../syntheticData/matrix.dat", len, map);
 

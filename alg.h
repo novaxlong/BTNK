@@ -6,6 +6,9 @@
 #define BOTTLENECK_ALG_H
 
 #include "data.h"
+#include <list>
+
+typedef list<node> QN;
 
 class Alg {
 
@@ -28,9 +31,10 @@ public:
 
 private:
     bool run;
-    vector<bool> checked;
+    vector<bool> checkedWorker;
+    vector<bool> checkedTask;
     void outputResult(const char *algMethod);
-    bool occupied(double d, task& t, VN& chain);
+    bool IBFS(double d, task bottleNeckTask, VN& chain);
 };
 
 
