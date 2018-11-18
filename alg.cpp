@@ -13,7 +13,6 @@ extern double **map;
 Alg::Alg(VT &task, VW &worker) : taskList(task), workerList(worker), run(false) {
     bottleNeck = -INT_MAX;
     checkedWorker = vector<bool>(workerList.size(), false);
-    checkedTask = vector<bool>(taskList.size(), false);
     workerMatchedList = VT(worker.size());
     taskMatchedList = VW(task.size());
 }
@@ -72,17 +71,17 @@ void Alg::simpleGreedy() {
             j++;
         }
     }
-    for (int l = 0; l < workerWaiting.size(); ++l) {
-        printf("Discard worker[%d].\n", workerWaiting[l].nodeId);
+    for (auto &l : workerWaiting) {
+        printf("Discard worker[%d].\n", l.nodeId);
     }
-    for (int m = 0; m < taskWaiting.size(); ++m) {
-        printf("Discarding task[%d].\n", taskWaiting[m].nodeId);
+    for (auto &m : taskWaiting) {
+        printf("Discarding task[%d].\n", m.nodeId);
     }
     outputResult("Greedy");
     run = true;
 }
 
-bool Alg::IBFS(double d, task bottleNeckTask, VN& chain) {
+bool Alg::BFS(double d, task bottleNeckTask, VN& chain) {
     QN nodeQueue = QN();
     bool updated = false;
     int *taskParent, *workerParent;
@@ -91,7 +90,6 @@ bool Alg::IBFS(double d, task bottleNeckTask, VN& chain) {
 
     nodeQueue.push_back(bottleNeckTask);
     while (!nodeQueue.empty()) {
-//        printf("%ld\n", nodeQueue.size());
         node firstItem = nodeQueue.front();
         if (firstItem.nodeType == 0) {                  // task
             for (node &worker : workerList) {
@@ -107,12 +105,8 @@ bool Alg::IBFS(double d, task bottleNeckTask, VN& chain) {
                 break;
             }
             else {
-//                if (!checkedTask[workerMatchedList[firstItem.nodeId].nodeId]) {
-//                    checkedTask[workerMatchedList[firstItem.nodeId].nodeId] = true;
-                    nodeQueue.push_back(workerMatchedList[firstItem.nodeId]);
-                    taskParent[workerMatchedList[firstItem.nodeId].nodeId] = firstItem.nodeId;
-//                }
-
+                nodeQueue.push_back(workerMatchedList[firstItem.nodeId]);
+                taskParent[workerMatchedList[firstItem.nodeId].nodeId] = firstItem.nodeId;
             }
         }
         nodeQueue.pop_front();
@@ -143,7 +137,7 @@ void Alg::swapChain() {
         return;
     }
     VN chain = VN();
-    while (IBFS(bottleNeck, taskList[bottleNeckPair.first], chain)) {
+    while (BFS(bottleNeck, taskList[bottleNeckPair.first], chain)) {
         for (int i = 0; i < chain.size(); ++i) {
             if (i & 1) {       // task
                 taskMatchedList[chain[i].nodeId] = chain[i-1];
@@ -165,15 +159,8 @@ void Alg::swapChain() {
         }
         chain.clear();
         checkedWorker = vector<bool>(workerList.size(), false);
-        checkedTask = vector<bool>(taskList.size(), false);
     }
     outputResult("Optimal");
-}
-
-void Alg::qLearning() {
-    outputResult("Q-Learning");
-    // This is a new line of algorithm.
-    run = true;
 }
 
 void Alg::outputResult(const char *algMethod) {

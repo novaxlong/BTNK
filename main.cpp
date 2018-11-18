@@ -9,23 +9,6 @@ using namespace std;
 double **map;
 
 
-void allocMemory(int len) {
-    map = (double **) malloc(len * sizeof(double *));
-    for (int k = 0; k < len; ++k) {
-        map[k] = (double *) malloc(len * sizeof(double));
-    }
-}
-
-void freeMemory(int len) {
-    for (int l = 0; l < len; ++l) {
-        free(map[l]);
-        map[l] = nullptr;
-    }
-    free(map);
-    map = nullptr;
-}
-
-
 int main(int argc, const char* argv[]) {
 
     int len = 20, lambda = 3, upperBound = 7;
@@ -37,16 +20,16 @@ int main(int argc, const char* argv[]) {
     DataProcess::readSequence("../syntheticData/sequence.dat", nodeList);
     DataProcess::splitSequence(nodeList, taskList, workerList);
     DataProcess::generateMatrix("../syntheticData/matrix.dat", taskList, workerList);
-    allocMemory(len);
+    DataProcess::mallocMap(len, &map);
     DataProcess::readMatrix("../syntheticData/matrix.dat", len, map);
 
     Alg algorithm(taskList, workerList);
 
     algorithm.simpleGreedy();
     algorithm.swapChain();
-    algorithm.qLearning();
+//    algorithm.qLearning();
 
-    freeMemory(len);
+    DataProcess::freeMap(len, &map);
     return 0;
 }
 

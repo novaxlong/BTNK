@@ -27,14 +27,12 @@ public:
     Alg (VT& task, VW& worker);
     void simpleGreedy();              // use Greedy algorithm to create the matching
     void swapChain();           // optimal algorithm
-    void qLearning();           // inspired by Mr. Wang
 
 private:
     bool run;
     vector<bool> checkedWorker;
-    vector<bool> checkedTask;
     void outputResult(const char *algMethod);
-    bool IBFS(double d, task bottleNeckTask, VN& chain);
+    bool BFS(double d, task bottleNeckTask, VN& chain);
 };
 
 

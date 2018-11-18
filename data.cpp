@@ -136,3 +136,19 @@ void DataProcess::readMatrix(const char *fileName, int len, double **map) {
     fclose(fp);
 }
 
+void DataProcess::mallocMap(int len, double ***map) {
+    *map = (double **) malloc(len * sizeof(double *));
+    for (int k = 0; k < len; ++k) {
+        (*map)[k] = (double *) malloc(len * sizeof(double));
+    }
+}
+
+void DataProcess::freeMap(int len, double ***map) {
+    for (int l = 0; l < len; ++l) {
+        free((*map)[l]);
+        (*map)[l] = nullptr;
+    }
+    free(*map);
+    *map = nullptr;
+}
+

@@ -12,9 +12,6 @@ using namespace std;
 struct node {
     int nodeType, nodeId, nodeArr, nodeDur;
     node() : nodeType(0), nodeId(0), nodeArr(0), nodeDur(0) {}
-    bool operator< (const node &node) {
-        return nodeArr + nodeDur < node.nodeArr + node.nodeDur;
-    }
 };
 
 typedef node task;
@@ -37,6 +34,8 @@ public:
     static void splitSequence(VN nodeList, VT& taskList, VW& workerList);
     static void generateMatrix(const char *fileName, VT taskList, VW workerList);
     static void readMatrix(const char *fileName, int len, double* map[]);
+    static void mallocMap(int len, double ***map);
+    static void freeMap(int len, double ***map);
 };
 
 #endif //BOTTLENECK_DATA_H
