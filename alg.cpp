@@ -18,7 +18,7 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
     Rwait.clear();
     Lmate = VI(L.size(), -1);
     Rmate = VI(R.size(), -1);
-//    btnkPair = make_pair(-1, -1);
+
     for (int i = 0, j = 0; i < L.size() || j < R.size(); ) {
         if (j == R.size() || (i != L.size() && L[i][2] < R[j][2])) {
             for (int k = 0; k < Lwait.size(); ++k) {
@@ -93,36 +93,160 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
             j++;
         }
     }
-    for (int i = 0; i < L.size(); ++i) {
-        printf("%4d", L[i][1]);
+    return btnk;
+}
+
+double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    if (L.size() == 0 || R.size() == 0) return 0.;
+
+    VI Lwait, Rwait;
+    double btnk = 0., _btnk;
+    Lwait.clear();
+    Rwait.clear();
+    Lmate = VI(L.size(), -1);
+    Rmate = VI(R.size(), -1);
+
+    for (int i = 0, j = 0; i < L.size() || j < R.size(); ) {
+        if (j == R.size() || (i != L.size() && L[i][2] < R[j][2])) {
+            int time = L[i][2];
+            for (int k = 0; k < Lwait.size(); ++k) {
+                if (L[Lwait[k]][3] == time) {
+                    int rindex = 0;
+                    double temp = cost[L[Lwait[k]][1]][R[Rwait[0]][1]];
+                    for (int p = 0; p < Rwait.size(); ++p) {
+                        if (cost[L[Lwait[k]][1]][R[Rwait[p]][1]] >= 0 && cost[L[Lwait[k]][1]][R[Rwait[p]][1]] < temp) {
+                            temp = cost[L[Lwait[k]][1]][R[Rwait[p]][1]];
+                            rindex = p;
+                        }
+                    }
+                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[k]][1], R[Rwait[rindex]][1]);
+                    btnk = (btnk > temp) ? btnk : temp;
+                    Lmate[Lwait[k]] = Rwait[rindex];
+                    Rmate[Rwait[rindex]] = Lwait[k];
+                    Lwait.erase(Lwait.begin() + k);
+                    Rwait.erase(Rwait.begin() + rindex);
+                    k--;
+                }
+            }
+            for (int k = 0; k < Rwait.size(); ++k) {
+                if (R[Rwait[k]][3] == time) {
+                    int lindex = 0;
+                    double temp = cost[L[Lwait[0]][1]][R[Rwait[k]][1]];
+                    for (int p = 0; p < Lwait.size(); ++p) {
+                        if (cost[L[Lwait[p]][1]][R[Rwait[k]][1]] >= 0 && cost[L[Lwait[p]][1]][R[Rwait[k]][1]] < temp) {
+                            temp = cost[L[Lwait[p]][1]][R[Rwait[k]][1]];
+                            lindex = p;
+                        }
+                    }
+                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[Rwait[k]][1]);
+                    btnk = (btnk > temp) ? btnk : temp;
+                    Lmate[Lwait[lindex]] = Rwait[k];
+                    Rmate[Rwait[k]] = Lwait[lindex];
+                    Lwait.erase(Lwait.begin() + lindex);
+                    Rwait.erase(Rwait.begin() + k);
+                    k--;
+                }
+            }
+            if (Rwait.size() == SIZE) {
+                int rindex = 0;
+                double temp = cost[L[i][1]][R[Rwait[0]][1]];
+                for (int k = 0; k < Rwait.size(); ++k) {
+                    if (cost[L[i][1]][R[Rwait[k]][1]] >= 0 && cost[L[i][1]][R[Rwait[k]][1]] < temp) {
+                        temp = cost[L[i][1]][R[Rwait[k]][1]];
+                        rindex = k;
+                    }
+                }
+                btnkPair = (btnk > temp) ? btnkPair : make_pair(L[i][1], R[Rwait[rindex]][1]);
+                btnk = (btnk > temp) ? btnk : temp;
+                Lmate[i] = Rwait[rindex];
+                Rmate[Rwait[rindex]] = i;
+                Rwait.erase(Rwait.begin() + rindex);
+            }
+            else
+                Lwait.push_back(i);
+            i++;
+        }
+        else {
+            int time = R[j][2];
+            for (int k = 0; k < Lwait.size(); ++k) {
+                if (L[Lwait[k]][3] == time) {
+                    int rindex = 0;
+                    double temp = cost[L[Lwait[k]][1]][R[Rwait[0]][1]];
+                    for (int p = 0; p < Rwait.size(); ++p) {
+                        if (cost[L[Lwait[k]][1]][R[Rwait[p]][1]] >= 0 && cost[L[Lwait[k]][1]][R[Rwait[p]][1]] < temp) {
+                            temp = cost[L[Lwait[k]][1]][R[Rwait[p]][1]];
+                            rindex = p;
+                        }
+                    }
+                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[k]][1], R[Rwait[rindex]][1]);
+                    btnk = (btnk > temp) ? btnk : temp;
+                    Lmate[Lwait[k]] = Rwait[rindex];
+                    Rmate[Rwait[rindex]] = Lwait[k];
+                    Lwait.erase(Lwait.begin() + k);
+                    Rwait.erase(Rwait.begin() + rindex);
+                    k--;
+                }
+            }
+            for (int k = 0; k < Rwait.size(); ++k) {
+                if (R[Rwait[k]][3] == time) {
+                    int lindex = 0;
+                    double temp = cost[L[Lwait[0]][1]][R[Rwait[k]][1]];
+                    for (int p = 0; p < Lwait.size(); ++p) {
+                        if (cost[L[Lwait[p]][1]][R[Rwait[k]][1]] >= 0 && cost[L[Lwait[p]][1]][R[Rwait[k]][1]] < temp) {
+                            temp = cost[L[Lwait[p]][1]][R[Rwait[k]][1]];
+                            lindex = p;
+                        }
+                    }
+                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[Rwait[k]][1]);
+                    btnk = (btnk > temp) ? btnk : temp;
+                    Lmate[Lwait[lindex]] = Rwait[k];
+                    Rmate[Rwait[k]] = Lwait[lindex];
+                    Lwait.erase(Lwait.begin() + lindex);
+                    Rwait.erase(Rwait.begin() + k);
+                    k--;
+                }
+            }
+            if (Lwait.size() == SIZE) {
+                int lindex = 0;
+                double temp = cost[L[Lwait[0]][1]][R[j][1]];
+                for (int k = 0; k < Lwait.size(); ++k) {
+                    if (cost[L[Lwait[k]][1]][R[j][1]] >= 0 && cost[L[Lwait[k]][1]][R[j][1]] < temp) {
+                        temp = cost[L[Lwait[k]][1]][R[j][1]];
+                        lindex = k;
+                    }
+                }
+                btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[j][1]);
+                btnk = (btnk > temp) ? btnk : temp;
+                Lmate[Lwait[lindex]] = j;
+                Rmate[j] = Lwait[lindex];
+                Lwait.erase(Lwait.begin() + lindex);
+            }
+            else
+                Rwait.push_back(j);
+            j++;
+        }
     }
-    printf("\n");
-    for (int i = 0; i < Lmate.size(); ++i) {
-        if (Lmate[i] == -1)
-            printf("%4d", -1);
-        else
-            printf("%4d", R[Lmate[i]][1]);
+    VVI LL, RR;
+    VI Lm, Rm;
+    PII pair;
+    for (int i = 0; i < Lwait.size(); ++i) {
+        LL.push_back(L[Lwait[i]]);
     }
-    printf("\n\n");
-    for (int i = 0; i < R.size(); ++i) {
-        printf("%4d", R[i][1]);
+    for (int i = 0; i < Rwait.size(); ++i) {
+        RR.push_back(R[Rwait[i]]);
     }
-    printf("\n");
-    for (int i = 0; i < Rmate.size(); ++i) {
-        if (Rmate[i] == -1)
-            printf("%4d", -1);
-        else
-            printf("%4d", L[Rmate[i]][1]);
+    _btnk = swapChain(cost, LL, RR, Lm, Rm, pair);
+    btnkPair = (btnk > _btnk) ? btnkPair : make_pair(LL[pair.first][1], RR[pair.second][1]);
+    btnk = (btnk > _btnk) ? btnk : _btnk;
+    for (int i = 0; i < Lm.size(); ++i) {
+        Lmate[LL[i][1]] = RR[Lm[i]][1];
+        Rmate[RR[Lm[i]][1]] = LL[i][1];
     }
-    printf("\n%.3f: < %d, %d >\n", btnk, L[btnkPair.first][1], R[btnkPair.second][1]);
-    printf("\n\n");
     return btnk;
 }
 
 bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII& btnkPair, VI& chain) {
-
     if (L.size() == 0 || R.size() == 0) return false;
-
     int l = btnkPair.first, r = btnkPair.second;
     VVI queue;
     bool update = false;
@@ -193,29 +317,6 @@ double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btn
         }
         chain.clear();
     }
-    for (int i = 0; i < L.size(); ++i) {
-        printf("%4d", L[i][1]);
-    }
-    printf("\n");
-    for (int i = 0; i < Lmate.size(); ++i) {
-        if (Lmate[i] == -1)
-            printf("%4d", -1);
-        else
-            printf("%4d", R[Lmate[i]][1]);
-    }
-    printf("\n\n");
-    for (int i = 0; i < R.size(); ++i) {
-        printf("%4d", R[i][1]);
-    }
-    printf("\n");
-    for (int i = 0; i < Rmate.size(); ++i) {
-        if (Rmate[i] == -1)
-            printf("%4d", -1);
-        else
-            printf("%4d", L[Rmate[i]][1]);
-    }
-    printf("\n%.3f: < %d, %d >\n", btnk, L[btnkPair.first][1], R[btnkPair.second][1]);
-    printf("\n\n");
     return btnk;
 }
 
@@ -255,15 +356,11 @@ int tick(const VVI& seq, VVI& L, VVI& R, int start, int t) {
     return i;
 }
 
-double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
-
-    int n = (int) cost.size();
+void RQL(const VVD& cost, VVI& seq) {
     int l = (int) seq.size();
     double btnk;
     VVI L, R;
 
-    Lmate = VI(n, -1);
-    Rmate = VI(n, -1);
     L.clear();
     R.clear();
 
@@ -272,7 +369,6 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
     count = LOWER_BOUND;
 
     while (i < l) {
-        printf("----------%d----------\n", i);
         int time = seq[i][2], lt = count;
         size_l = (int) L.size();
         size_r = (int) R.size();
@@ -284,7 +380,6 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
             }
         }
         if (lt == count) {
-            printf("case 1\n");
             VI Lm, Rm;
             PII pair;
             btnk = swapChain(cost, L, R, Lm, Rm, pair);
@@ -323,7 +418,6 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
             count = LOWER_BOUND;
         }
         else {
-            printf("case 2\n");
             last_l = size_l;
             last_r = size_r;
             i = tick(seq, L, R, i, 1);
@@ -339,9 +433,96 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
             count++;
         }
     }
-    VI Lm, Rm;
-    PII pair;
-    swapChain(cost, L, R, Lm, Rm, pair);
-    return 0;
 }
 
+double QL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    int n = (int) cost.size();
+    int l = (int) seq.size();
+    double btnk = 0., _btnk;
+    VVI L, R;
+
+    Lmate = VI(n, -1);
+    Rmate = VI(n, -1);
+    L.clear();
+    R.clear();
+
+    int count = 0, i = 0, size_l, size_r, last_l, last_r;
+    i = tick(seq, L, R, 0, LOWER_BOUND);
+    count = LOWER_BOUND;
+
+    while (i < l) {
+        int time = seq[i][2], lt = count;
+        size_l = (int) L.size();
+        size_r = (int) R.size();
+        double temp = Q[size_l][size_r][count - LOWER_BOUND][count - LOWER_BOUND];
+        for (int j = count; j <= UPPER_BOUND; ++j) {
+            if (Q[size_l][size_r][count - LOWER_BOUND][j - LOWER_BOUND] > temp) {
+                temp = Q[size_l][size_r][count - LOWER_BOUND][j - LOWER_BOUND];
+                lt = j;
+            }
+        }
+        if (lt == count) {
+            VI Lm, Rm;
+            PII pair;
+            _btnk = swapChain(cost, L, R, Lm, Rm, pair);
+            btnkPair = (btnk > _btnk) ? btnkPair : make_pair(L[pair.first][1], R[pair.second][1]);
+            btnk = (btnk > _btnk) ? btnk : _btnk;
+            for (int j = 0; j < Lm.size(); ++j) {
+                if (Lm[j] == -1) continue;
+                if (cost[L[j][1]][R[Lm[j]][1]] != -1.)  {
+                    Lmate[L[j][1]] = R[Lm[j]][1];
+                    Rmate[R[Lm[j]][1]] = L[j][1];
+                    R[Lm[j]][0] = -1;
+                }
+            }
+            for (int j = 0; j < Rm.size(); ++j) {
+                if (Rm[j] == -1) continue;
+                if (cost[L[Rm[j]][1]][R[j][1]] != -1.) {
+                    Lmate[L[Rm[j]][1]] = R[j][1];
+                    Rmate[R[j][1]] = L[Rm[j]][1];
+                    L[Rm[j]][0] = -1;
+                }
+            }
+            for (int j = 0; j < L.size(); ++j) {
+                if (time > L[j][3] || L[j][0] == -1) {
+                    L.erase(L.begin() + j);
+                    j--;
+                }
+            }
+            for (int j = 0; j < R.size(); ++j) {
+                if (time > R[j][3] || R[j][0] == -1) {
+                    R.erase(R.begin() + j);
+                    j--;
+                }
+            }
+            i = tick(seq, L, R, i, LOWER_BOUND);
+            count = LOWER_BOUND;
+        }
+        else {
+            i = tick(seq, L, R, i, 1);
+            count++;
+        }
+    }
+    VI Lm, Rm;
+    PII pair;
+    _btnk = swapChain(cost, L, R, Lm, Rm, pair);
+    btnkPair = (btnk > _btnk) ? btnkPair : make_pair(L[pair.first][1], R[pair.second][1]);
+    btnk = (btnk > _btnk) ? btnk : _btnk;
+    for (int j = 0; j < Lm.size(); ++j) {
+        if (Lm[j] == -1) continue;
+        if (cost[L[j][1]][R[Lm[j]][1]] != -1.)  {
+            Lmate[L[j][1]] = R[Lm[j]][1];
+            Rmate[R[Lm[j]][1]] = L[j][1];
+            R[Lm[j]][0] = -1;
+        }
+    }
+    for (int j = 0; j < Rm.size(); ++j) {
+        if (Rm[j] == -1) continue;
+        if (cost[L[Rm[j]][1]][R[j][1]] != -1.) {
+            Lmate[L[Rm[j]][1]] = R[j][1];
+            Rmate[R[j][1]] = L[Rm[j]][1];
+            L[Rm[j]][0] = -1;
+        }
+    }
+    return btnk;
+}
