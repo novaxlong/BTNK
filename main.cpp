@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include "data.h"
 #include "alg.h"
-//#include "ql.h"
 
 using namespace std;
 
@@ -38,14 +37,8 @@ int main(int argc, const char* argv[]) {
     btnk = swapChain(cost, LL, RR, Lmate, Rmate, pair);
     printf("%.3f: < %d, %d >\n", btnk, LL[pair.first][1], RR[pair.second][1]);
     printf("\n\n");
-//
-//    Alg algorithm(taskList, workerList);
-//
-//    algorithm.simpleGreedy();
-//    algorithm.swapChain();
-//
-//    QL myQL;
-//    myQL.RQL(len, lambda, upperBound);
+
+    RQL(cost, seq, Lmate, Rmate);
 
     return 0;
 }

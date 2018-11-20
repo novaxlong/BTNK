@@ -5,12 +5,9 @@
 #include <queue>
 #include <algorithm>
 #include "alg.h"
-
 using namespace std;
 
-bool cmp(const VD& i, const VD& j) {
-    return (i[0] < j[0]);
-}
+double Q[MAXSIZE][MAXSIZE][LEN][LEN];
 
 double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
     VI Lwait, Rwait;        // restore the index of the waiting l/r in the L/R
@@ -215,5 +212,125 @@ double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btn
 }
 
 
+void initQ() {
+    for (int i = 0; i < MAXSIZE; ++i) {
+        for (int j = 0; j < MAXSIZE; ++j) {
+            for (int k = 0; k < LEN; ++k) {
+                for (int p = k; p < LEN; ++p) {
+                    Q[i][j][k][p] = INIT * ((double) rand() / (double) RAND_MAX);
+                }
+            }
+        }
+    }
+}
 
+int tick(const VVI& seq, VVI& L, VVI& R, int start, int t) {
+    int time = seq[start][2], i = start;
+    int end_time = start + t;
+    while (time < end_time) {
+        time = seq[i][2];
+        if (seq[i][0] == 0) L.push_back(seq[i]);
+        else R.push_back(seq[i]);
+        if (L.size() >= MAXSIZE) L.erase(L.begin());
+        if (R.size() >= MAXSIZE) R.erase(R.begin());
+        for (int j = 0; j < L.size(); ++j) {
+            if (time > L[j][3] || L[j][0] == -1) {
+                L.erase(L.begin() + j);
+                j--;
+            }
+        }
+        for (int j = 0; j < R.size(); ++j) {
+            if (time > R[j][3] || R[j][0] == -1) {
+                R.erase(R.begin() + j);
+                j--;
+            }
+        }
+        i++;
+        if (i >= seq.size()) return i;
+    }
+    return i;
+}
+
+double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
+    int n = (int) cost.size();
+    int l = (int) seq.size();
+    double btnk;
+    VVI L, R;
+
+    Lmate = VI(n, -1);
+    Rmate = VI(n, -1);
+    L.clear();
+    R.clear();
+
+    int count = 0, i = 0, size_l, size_r, last_l, last_r;
+    i = tick(seq, L, R, 0, LOWER_BOUND);
+    count = LOWER_BOUND;
+
+    while (i < l) {
+        int time = seq[i][2], lt = count;
+        size_l = (int) L.size();
+        size_r = (int) R.size();
+        double temp = Q[size_l][size_r][count - LOWER_BOUND][count - LOWER_BOUND];
+        for (int j = count; j <= LOWER_BOUND; ++j) {
+            if (Q[size_l][size_r][j - LOWER_BOUND][j - LOWER_BOUND] > temp) {
+                temp = Q[size_l][size_r][j - LOWER_BOUND][j - LOWER_BOUND];
+                lt = j;
+            }
+        }
+        if (lt == count) {
+            VI Lm, Rm;
+            PII pair;
+            btnk = swapChain(cost, L, R, Lm, Rm, pair);
+            for (int j = 0; j < Lm.size(); ++j) {
+                if (Lm[j] == -1) continue;
+                if (cost[L[j][1]][R[Lm[j]][1]] != -1.) R[Lm[j]][0] = -1;
+            }
+            for (int j = 0; j < Rm.size(); ++j) {
+                if (Rm[j] == -1) continue;
+                if (cost[L[Rm[j]][1]][R[j][1]] != -1.) L[Rm[j]][0] = -1;
+            }
+            for (int j = 0; j < L.size(); ++j) {
+                if (time > L[j][3] || L[j][0] == -1) {
+                    L.erase(L.begin() + j);
+                    j--;
+                }
+            }
+            for (int j = 0; j < R.size(); ++j) {
+                if (time > R[j][3] || R[j][0] == -1) {
+                    R.erase(R.begin() + j);
+                    j--;
+                }
+            }
+            last_l = (int) L.size();
+            last_r = (int) R.size();
+            i = tick(seq, L, R, i, LOWER_BOUND);
+            size_l = (int) L.size();
+            size_r = (int) R.size();
+            double maxQ = 0.;
+            for (int j = 0; j < LEN; ++j) {
+                if (Q[size_l][size_r][0][j] > maxQ) {
+                    maxQ = Q[size_l][size_r][0][j];
+                }
+            }
+            Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND] += ALPHA * (1./btnk + maxQ - Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND]);
+            count = LOWER_BOUND;
+        }
+        else {
+            last_l = size_l;
+            last_r = size_r;
+            i = tick(seq, L, R, i, 1);
+            size_l = (int) L.size();
+            size_r = (int) R.size();
+            double maxQ = 0.;
+            for (int j = 0; j < LEN; ++j) {
+                if (Q[size_l][size_r][count - LOWER_BOUND + 1][j] > maxQ) {
+                    maxQ = Q[size_l][size_r][count - LOWER_BOUND + 1][j];
+                }
+            }
+            Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND] += ALPHA * (maxQ - Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND]);
+            count++;
+        }
+    }
+    return 0;
+}
 
