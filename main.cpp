@@ -3,33 +3,50 @@
 #include <cstdlib>
 #include "data.h"
 #include "alg.h"
+//#include "ql.h"
 
 using namespace std;
 
-double **map;
-
-
 int main(int argc, const char* argv[]) {
 
-    int len = 20, lambda = 3, upperBound = 7;
-    VN nodeList;
-    VT taskList;
-    VW workerList;
+    int len = 20, lambda = 3, lowerBound = 10, upperBound = 20;
+    double btnk;
+    VVI seq, L, R;
+    VVD cost;
 
-    DataProcess::generateSequence("../syntheticData/sequence.dat", len, lambda, upperBound);
-    DataProcess::readSequence("../syntheticData/sequence.dat", nodeList);
-    DataProcess::splitSequence(nodeList, taskList, workerList);
-    DataProcess::generateMatrix("../syntheticData/matrix.dat", taskList, workerList);
-    DataProcess::mallocMap(len, &map);
-    DataProcess::readMatrix("../syntheticData/matrix.dat", len, map);
+    generateSequence("../syntheticData/sequence.dat", len, lambda, lowerBound, upperBound);
+    readSequence("../syntheticData/sequence.dat", seq);
+    splitSequence(seq, L, R);
+    generateMatrix("../syntheticData/matrix.dat", L, R);
+    readMatrix("../syntheticData/matrix.dat", len, cost);
 
-    Alg algorithm(taskList, workerList);
+    VI Lmate, Rmate;
+    PII pair;
 
-    algorithm.simpleGreedy();
-    algorithm.swapChain();
-//    algorithm.qLearning();
+    VVI LL, RR;
+    for (int i = 0; i < 11; ++i) {
+        LL.push_back(L[i+5]);
+    }
+    for (int i = 0; i < 7; ++i) {
+        RR.push_back(R[i+5]);
+    }
 
-    DataProcess::freeMap(len, &map);
+    btnk = onlineGreedy(cost, LL, RR, Lmate, Rmate, pair);
+    printf("%.3f: < %d, %d >\n", btnk, LL[pair.first][1], RR[pair.second][1]);
+    printf("\n\n");
+
+    btnk = swapChain(cost, LL, RR, Lmate, Rmate, pair);
+    printf("%.3f: < %d, %d >\n", btnk, LL[pair.first][1], RR[pair.second][1]);
+    printf("\n\n");
+//
+//    Alg algorithm(taskList, workerList);
+//
+//    algorithm.simpleGreedy();
+//    algorithm.swapChain();
+//
+//    QL myQL;
+//    myQL.RQL(len, lambda, upperBound);
+
     return 0;
 }
 

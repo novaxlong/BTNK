@@ -8,32 +8,9 @@
 #include "data.h"
 #include <list>
 
-typedef list<node> QN;
+typedef pair<int, int> PII;     // < L_index, R_index >
 
-class Alg {
-
-    /**
-     * This class is going to define some algorithms to solve the bottleneck matching
-     * problem, including Greedy, SwapChain, Q_Learning. Besides, I will introduce some
-     * new algorithms to this class if I come up with new ideas. Let's begin!
-     */
-
-public:
-    double bottleNeck;
-    pair<int, int> bottleNeckPair;      // < task_id, worker_id >
-    VT taskList, workerMatchedList;
-    VW workerList, taskMatchedList;
-
-    Alg (VT& task, VW& worker);
-    void simpleGreedy();              // use Greedy algorithm to create the matching
-    void swapChain();           // optimal algorithm
-
-private:
-    bool run;
-    vector<bool> checkedWorker;
-    void outputResult(const char *algMethod);
-    bool BFS(double d, task bottleNeckTask, VN& chain);
-};
-
+double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
+double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
 
 #endif //BOTTLENECK_ALG_H

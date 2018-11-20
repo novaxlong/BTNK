@@ -8,178 +8,212 @@
 
 using namespace std;
 
-extern double **map;
-
-Alg::Alg(VT &task, VW &worker) : taskList(task), workerList(worker), run(false) {
-    bottleNeck = -INT_MAX;
-    checkedWorker = vector<bool>(workerList.size(), false);
-    workerMatchedList = VT(worker.size());
-    taskMatchedList = VW(task.size());
+bool cmp(const VD& i, const VD& j) {
+    return (i[0] < j[0]);
 }
 
-void Alg::simpleGreedy() {
-    VT taskWaiting;
-    VW workerWaiting;
-    double minValue;
-    int minIndex;
-
-    for (int i = 0, j = 0; i < taskList.size() || j < workerList.size(); ) {
-        if (j == workerList.size()
-                || (i != taskList.size() && taskList[i].nodeArr < workerList[j].nodeArr)) {
-            if (!workerWaiting.empty()) {
-                minValue = INT_MAX;
-                minIndex = -1;
-                for (int k = 0; k < workerWaiting.size(); ++k) {
-                    if (map[taskList[i].nodeId][workerWaiting[k].nodeId] >=0
-                            && map[taskList[i].nodeId][workerWaiting[k].nodeId] < minValue) {
-                        minValue = map[taskList[i].nodeId][workerWaiting[k].nodeId];
-                        minIndex = k;
+double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    VI Lwait, Rwait;        // restore the index of the waiting l/r in the L/R
+    double btnk = 0.;
+    Lwait.clear();
+    Rwait.clear();
+    Lmate = VI(L.size(), -1);
+    Rmate = VI(R.size(), -1);
+    btnkPair = make_pair(-1, -1);
+    for (int i = 0, j = 0; i < L.size() || j < R.size(); ) {
+        if (j == R.size() || (i != L.size() && L[i][2] < R[j][2])) {
+            for (int k = 0; k < Lwait.size(); ++k) {
+                if (L[Lwait[k]][3] < L[i][2]) {
+                    printf("Discard task %d.\n", L[Lwait[k]][1]);
+                    Lwait.erase(Lwait.begin() + k);
+                    k--;
+                }
+            }
+            for (int k = 0; k < Rwait.size(); ++k) {
+                if (R[Rwait[k]][3] < L[i][2]) {
+                    printf("Discard worker %d.\n", R[Rwait[k]][1]);
+                    Rwait.erase(Rwait.begin() + k);
+                    k--;
+                }
+            }
+            if (!Rwait.empty()) {
+                double minCost = 1.0;
+                int minIndex = -1, rIndex, kIndex = -1;
+                for (int k = 0; k < Rwait.size(); ++k) {
+                    rIndex = Rwait[k];
+                    if (cost[L[i][1]][R[rIndex][1]] >= 0 && cost[L[i][1]][R[rIndex][1]] <= minCost) {
+                        minCost = cost[L[i][1]][R[rIndex][1]];
+                        minIndex = rIndex;
+                        kIndex = k;
                     }
                 }
-                if (minIndex != -1) {
-                    taskMatchedList[taskList[i].nodeId] = workerWaiting[minIndex];
-                    workerMatchedList[workerWaiting[minIndex].nodeId] = taskList[i];
-                    bottleNeckPair = (bottleNeck > minValue ?
-                                      bottleNeckPair : make_pair(taskList[i].nodeId, workerWaiting[minIndex].nodeId));
-                    bottleNeck = (bottleNeck > minValue ? bottleNeck : minValue);
-                    workerWaiting.erase(workerWaiting.begin() + minIndex);
-                }
-            } else
-                taskWaiting.push_back(taskList[i]);
+                Lmate[i] = minIndex;
+                Rmate[minIndex] = i;
+                btnkPair = (btnk > minCost) ? btnkPair : make_pair(i, minIndex);
+                btnk = (btnk > minCost) ? btnk : minCost;
+                Rwait.erase(Rwait.begin() + kIndex);
+            }
+            else
+                Lwait.push_back(i);
             i++;
-        } else {
-            if (!taskWaiting.empty()) {
-                minValue = INT_MAX;
-                minIndex = -1;
-                for (int k = 0; k < taskWaiting.size(); ++k) {
-                    if (map[taskWaiting[k].nodeId][workerList[j].nodeId] >=0
-                            && map[taskWaiting[k].nodeId][workerList[j].nodeId] < minValue) {
-                        minValue = map[taskWaiting[k].nodeId][workerList[j].nodeId];
-                        minIndex = k;
+        }
+        else {
+            for (int k = 0; k < Lwait.size(); ++k) {
+                if (L[Lwait[k]][3] < R[j][2]) {
+                    printf("Discard task %d.\n", L[Lwait[k]][1]);
+                    Lwait.erase(Lwait.begin() + k);
+                    k--;
+                }
+            }
+            for (int k = 0; k < Rwait.size(); ++k) {
+                if (R[Rwait[k]][3] < R[j][2]) {
+                    printf("Discard worker %d.\n", R[Rwait[k]][1]);
+                    Rwait.erase(Rwait.begin() + k);
+                    k--;
+                }
+            }
+            if (!Lwait.empty()) {
+                double minCost = 1.0;
+                int minIndex = -1, lIndex, kIndex = -1;
+                for (int k = 0; k < Lwait.size(); ++k) {
+                    lIndex = Lwait[k];
+                    if (cost[L[lIndex][1]][R[j][1]] >= 0 && cost[L[lIndex][1]][R[j][1]] <= minCost) {
+                        minCost = cost[L[lIndex][1]][R[j][1]];
+                        minIndex = lIndex;
+                        kIndex = k;
                     }
                 }
-                if (minIndex != -1) {
-                    taskMatchedList[taskWaiting[minIndex].nodeId] = workerList[j];
-                    workerMatchedList[workerList[j].nodeId] = taskWaiting[minIndex];
-                    bottleNeckPair = (bottleNeck > minValue ?
-                            bottleNeckPair : make_pair(taskWaiting[minIndex].nodeId, workerList[j].nodeId));
-                    bottleNeck = (bottleNeck > minValue ? bottleNeck : minValue);
-                    taskWaiting.erase(taskWaiting.begin() + minIndex);
-                }
-            } else
-                workerWaiting.push_back(workerList[j]);
+                Lmate[minIndex] = j;
+                Rmate[j] = minIndex;
+                btnkPair = (btnk > minCost) ? btnkPair : make_pair(minIndex, j);
+                btnk = (btnk > minCost) ? btnk : minCost;
+                Lwait.erase(Lwait.begin() + kIndex);
+            }
+            else
+                Rwait.push_back(j);
             j++;
         }
     }
-    for (auto &l : workerWaiting) {
-        printf("Discard worker[%d].\n", l.nodeId);
+    for (int i = 0; i < L.size(); ++i) {
+        printf("%4d", L[i][1]);
     }
-    for (auto &m : taskWaiting) {
-        printf("Discarding task[%d].\n", m.nodeId);
+    printf("\n");
+    for (int i = 0; i < Lmate.size(); ++i) {
+        if (Lmate[i] == -1)
+            printf("%4d", -1);
+        else
+            printf("%4d", R[Lmate[i]][1]);
     }
-    outputResult("Greedy");
-    run = true;
+    printf("\n\n");
+    for (int i = 0; i < R.size(); ++i) {
+        printf("%4d", R[i][1]);
+    }
+    printf("\n");
+    for (int i = 0; i < Rmate.size(); ++i) {
+        if (Rmate[i] == -1)
+            printf("%4d", -1);
+        else
+            printf("%4d", L[Rmate[i]][1]);
+    }
+    printf("\n\n");
+    return btnk;
 }
 
-bool Alg::BFS(double d, task bottleNeckTask, VN& chain) {
-    QN nodeQueue = QN();
-    bool updated = false;
-    int *taskParent, *workerParent;
-    taskParent = (int*) malloc(taskList.size() * sizeof(int));
-    workerParent = (int*) malloc(workerList.size() * sizeof(int));
+bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII& btnkPair, VI& chain) {
+    int l = btnkPair.first, r = btnkPair.second;
+    VVI queue;
+    bool update = false;
+    VI dad(R.size());
+    vector<bool> seen = vector<bool>(R.size(), false);
 
-    nodeQueue.push_back(bottleNeckTask);
-    while (!nodeQueue.empty()) {
-        node firstItem = nodeQueue.front();
-        if (firstItem.nodeType == 0) {                  // task
-            for (node &worker : workerList) {
-                if (!checkedWorker[worker.nodeId] && map[firstItem.nodeId][worker.nodeId] < d && map[firstItem.nodeId][worker.nodeId] >= 0) {
-                    nodeQueue.push_back(worker);
-                    workerParent[worker.nodeId] = firstItem.nodeId;
-                    checkedWorker[worker.nodeId] = true;
+    VI temp = {0, btnkPair.first};
+    queue.push_back(temp);
+    Lmate[l] = -1;
+    Rmate[r] = -1;
+
+    while (!queue.empty()) {
+        VI head = queue[0];
+        if (head[0] == 0) {
+            for (int i = 0; i < R.size(); ++i) {
+                if (!seen[i] && cost[L[head[1]][1]][R[i][1]] >= 0 && cost[L[head[1]][1]][R[i][1]] < btnk) {
+                    dad[i] = head[1];
+                    seen[i] = true;
+                    temp = {1, i};
+                    queue.push_back(temp);
                 }
             }
-        } else {            // worker
-            if (firstItem.nodeId == bottleNeckPair.second) {
-                updated = true;
+        }
+        else {
+            if (Rmate[head[1]] == -1) {
+                r = head[1];
+                update = true;
                 break;
             }
-            else {
-                nodeQueue.push_back(workerMatchedList[firstItem.nodeId]);
-                taskParent[workerMatchedList[firstItem.nodeId].nodeId] = firstItem.nodeId;
-            }
+            temp = {0, Rmate[head[1]]};
+            queue.push_back(temp);
         }
-        nodeQueue.pop_front();
+        queue.erase(queue.begin());
     }
-    if (updated) {
-        node lastTwoItem = workerList[bottleNeckPair.second];
-        node lastItem = taskList[workerParent[bottleNeckPair.second]];
-        while (lastItem.nodeId != bottleNeckPair.first) {
-            chain.push_back(lastTwoItem);
-            chain.push_back(lastItem);
-            lastTwoItem = workerList[taskParent[lastItem.nodeId]];
-            lastItem = taskList[workerParent[lastTwoItem.nodeId]];
+    if (update) {
+        l = dad[r];
+        chain.push_back(r);
+        chain.push_back(l);
+        while (l != btnkPair.first) {
+            r = Lmate[l];
+            l = dad[r];
+            chain.push_back(r);
+            chain.push_back(l);
         }
-        chain.push_back(lastTwoItem);
-        chain.push_back(lastItem);
-        free(taskParent);
-        free(workerParent);
         return true;
     }
-    free(taskParent);
-    free(workerParent);
+    Lmate[l] = r;
+    Rmate[r] = l;
     return false;
 }
 
-void Alg::swapChain() {
-    if (!run) {
-        printf("PLEASE run ANOTHER method to gain a matching.\n");
-        return;
-    }
-    VN chain = VN();
-    while (BFS(bottleNeck, taskList[bottleNeckPair.first], chain)) {
+double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    double btnk = onlineGreedy(cost, L, R, Lmate, Rmate, btnkPair);
+    VI chain;
+    while (BFS(cost, L, R, Lmate, Rmate, btnk, btnkPair, chain)) {
         for (int i = 0; i < chain.size(); ++i) {
-            if (i & 1) {       // task
-                taskMatchedList[chain[i].nodeId] = chain[i-1];
-                workerMatchedList[chain[i-1].nodeId] = chain[i];
-            } else {                // worker
-                taskMatchedList[chain[i+1].nodeId] = chain[i];
-                workerMatchedList[chain[i].nodeId] = chain[i+1];
+            if (i & 1) {
+                Lmate[chain[i]] = chain[i-1];
+                Rmate[chain[i-1]] = chain[i];
             }
         }
-        for (int i = 0; i < taskMatchedList.size(); ++i) {
-            int workerId = taskMatchedList[i].nodeId;
-            if (i == 0) {
-                bottleNeckPair = make_pair(i, workerId);
-                bottleNeck = map[i][workerId];
-            } else {
-                bottleNeckPair = (bottleNeck > map[i][workerId] ? bottleNeckPair : make_pair(i, workerId));
-                bottleNeck = (bottleNeck > map[i][workerId] ? bottleNeck : map[i][workerId]);
-            }
+        btnk = 0.;
+        for (int i = 0; i < Lmate.size(); ++i) {
+            if (Lmate[i] == -1) continue;
+            btnkPair = (btnk > cost[L[i][1]][R[Lmate[i]][1]] ? btnkPair : make_pair(i, Lmate[i]));
+            btnk = (btnk > cost[L[i][1]][R[Lmate[i]][1]] ? btnk : cost[L[i][1]][R[Lmate[i]][1]]);
         }
         chain.clear();
-        checkedWorker = vector<bool>(workerList.size(), false);
     }
-    outputResult("Optimal");
+    for (int i = 0; i < L.size(); ++i) {
+        printf("%4d", L[i][1]);
+    }
+    printf("\n");
+    for (int i = 0; i < Lmate.size(); ++i) {
+        if (Lmate[i] == -1)
+            printf("%4d", -1);
+        else
+            printf("%4d", R[Lmate[i]][1]);
+    }
+    printf("\n\n");
+    for (int i = 0; i < R.size(); ++i) {
+        printf("%4d", R[i][1]);
+    }
+    printf("\n");
+    for (int i = 0; i < Rmate.size(); ++i) {
+        if (Rmate[i] == -1)
+            printf("%4d", -1);
+        else
+            printf("%4d", L[Rmate[i]][1]);
+    }
+    printf("\n");
+    return btnk;
 }
 
-void Alg::outputResult(const char *algMethod) {
-    printf("%s Performances: \n", algMethod);
-    printf("bottleNeck = %lf\n", bottleNeck);
-    printf("Tasks Matching\n");
-    for (int i = 0; i < taskMatchedList.size(); ++i)
-        printf("%4d", i);
-    printf("\n");
-    for (auto &worker : taskMatchedList)
-        printf("%4d", worker.nodeId);
-    printf("\nWorkers Matching\n");
-    for (int i = 0; i < workerMatchedList.size(); ++i)
-        printf("%4d", i);
-    printf("\n");
-    for (auto &task : workerMatchedList)
-        printf("%4d", task.nodeId);
-    printf("\nBottleNeckPair = <task(%d), worker(%d)>.\n\n", bottleNeckPair.first, bottleNeckPair.second);
-}
 
 
 

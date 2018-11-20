@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void DataProcess::generateSequence(const char *fileName, int len, int lambda, int upperBound) {
+void generateSequence(const char *fileName, int len, int lambda, int lowerBound, int upperBound) {
     FILE *fp = fopen(fileName, "w");
     if (fp == nullptr) {
         printf("Cannot open file %s\n.", fileName);
@@ -19,11 +19,11 @@ void DataProcess::generateSequence(const char *fileName, int len, int lambda, in
     }
 
     int num = 0, totalLen = 2 * len, taskLen = 0, workerLen = 0;
-    int taskNodeId = 0, workerNodeId = 0, nodeArr = 0, nodeDur;
+    int taskId = 0, workerId = 0, start = 0, end = 0, duration = 0;
     random_device rd;
     mt19937 gen(rd());
     poisson_distribution<> pd(lambda);
-    uniform_int_distribution<> uid(1, upperBound);
+    uniform_int_distribution<> uid(lowerBound, upperBound);
 
     while (num < totalLen) {
         int k = pd(gen), task_k, worker_k;
@@ -38,117 +38,86 @@ void DataProcess::generateSequence(const char *fileName, int len, int lambda, in
             task_k = k - worker_k;
         }
         for (int i = 0; i < task_k; ++i) {
-            nodeDur = uid(gen);
-            fprintf(fp, "0 %d %d %d\n", taskNodeId++, nodeArr, nodeDur);
+            duration = uid(gen);
+            end = start + duration;
+            fprintf(fp, "0 %d %d %d\n", taskId++, start, end);
         }
         for (int j = 0; j < worker_k; ++j) {
-            nodeDur = uid(gen);
-            fprintf(fp, "1 %d %d %d\n", workerNodeId++, nodeArr, nodeDur);
+            duration = uid(gen);
+            end = start + duration;
+            fprintf(fp, "1 %d %d %d\n", workerId++, start, end);
         }
         taskLen += task_k;
         workerLen += worker_k;
-        nodeArr++;
+        start++;
         num += k;
     }
     fclose(fp);
 }
 
-void DataProcess::readSequence(const char *fileName, vector<node>& nodeList) {
+void readSequence(const char *fileName, VVI &seq) {
     FILE *fp = fopen(fileName, "r");
     if (fp == nullptr) {
         printf("Cannot open file %s\n.", fileName);
         exit(-1);
     }
-
-    int nodeType, nodeId, nodeArr, nodeDur;
-    node temp;
-    while (fscanf(fp, "%d %d %d %d", &nodeType, &nodeId, &nodeArr, &nodeDur) == 4) {
-        temp.nodeType = nodeType;
-        temp.nodeId = nodeId;
-        temp.nodeArr = nodeArr;
-        temp.nodeDur = nodeDur;
-        nodeList.push_back(temp);
+    VI temp;
+    int type, id, start, end;
+    while (fscanf(fp, "%d %d %d %d", &type, &id, &start, &end) == 4) {
+        temp.push_back(type);       // 0
+        temp.push_back(id);         // 1
+        temp.push_back(start);      // 2
+        temp.push_back(end);        // 3
+        seq.push_back(temp);
+        temp.clear();
     }
     fclose(fp);
 }
 
-void DataProcess::splitSequence(VN nodeList, VT &taskList, VW& workerList) {
-    taskList.clear();
-    workerList.clear();
-    for (node &curNode : nodeList) {
-        if (curNode.nodeType == 0)
-            taskList.push_back(curNode);
-        else
-            workerList.push_back(curNode);
+void splitSequence(VVI &seq, VVI &L, VVI &R) {
+    L.clear();
+    R.clear();
+    for (int i = 0; i < seq.size(); ++i) {
+        if (seq[i][0] == 0) L.push_back(seq[i]);
+        else R.push_back(seq[i]);
     }
 }
 
-void DataProcess::generateMatrix(const char *fileName, VT taskList, VW workerList) {
+void generateMatrix(const char *fileName, VVI &L, VVI &R) {
     FILE *fp = fopen(fileName, "w");
     if (fp == nullptr) {
         printf("Cannot open file %s\n.", fileName);
         exit(-1);
     }
-
-    double bottleNeck;
+    double cost = 0.;
     random_device rd;
     mt19937 gen(rd());
     uniform_real_distribution<> urd(0, 1);
 
-    for (auto &curTask : taskList) {
-        for (auto &curWorker : workerList) {
-            if ((curTask.nodeArr - (curWorker.nodeArr + curWorker.nodeDur))
-                    * ((curTask.nodeArr + curTask.nodeDur) - curWorker.nodeArr) <= 0) {
-                bottleNeck = urd(gen);
-                fprintf(fp, "%lf ", bottleNeck);
-            }
-            else {
-                bottleNeck = -1;
-                fprintf(fp, "%d ", (int) bottleNeck);
-            }
+    for (int i = 0; i < L.size(); ++i) {
+        for (int j = 0; j < R.size(); ++j) {
+            if ((L[i][2] - R[j][3]) * (L[i][3] - R[j][2]) <= 0) cost = urd(gen);
+            else cost = -1;
+            fprintf(fp, "%7.3lf ", cost);
         }
         fprintf(fp, "\n");
     }
-
     fclose(fp);
 }
 
-void DataProcess::readMatrix(const char *fileName, int len, double **map) {
+void readMatrix(const char *fileName, int len, VVD &mat) {
     FILE *fp = fopen(fileName, "r");
     if (fp == nullptr) {
         printf("Cannot open file %s\n.", fileName);
         exit(-1);
     }
-    if (map == nullptr) {
-        map = (double **) malloc(len * sizeof(double *));
-        for (int i = 0; i < len; ++i)
-            map[i] = (double *) malloc(len * sizeof(double));
-    }
-
     double value;
+    mat = VVD((unsigned long) len, VD((unsigned long) len));
     for (int i = 0; i < len; ++i) {
         for (int j = 0; j < len; ++j) {
-            fscanf(fp, "%lf", &value);
-            map[i][j] = value;
+            fscanf(fp, "%lf ", &value);
+            mat[i][j] = value;
         }
     }
-
     fclose(fp);
 }
-
-void DataProcess::mallocMap(int len, double ***map) {
-    *map = (double **) malloc(len * sizeof(double *));
-    for (int k = 0; k < len; ++k) {
-        (*map)[k] = (double *) malloc(len * sizeof(double));
-    }
-}
-
-void DataProcess::freeMap(int len, double ***map) {
-    for (int l = 0; l < len; ++l) {
-        free((*map)[l]);
-        (*map)[l] = nullptr;
-    }
-    free(*map);
-    *map = nullptr;
-}
-
