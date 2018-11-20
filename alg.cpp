@@ -10,13 +10,15 @@ using namespace std;
 double Q[MAXSIZE][MAXSIZE][LEN][LEN];
 
 double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    if (L.size() == 0 || R.size() == 0) return 0.;
+
     VI Lwait, Rwait;        // restore the index of the waiting l/r in the L/R
     double btnk = 0.;
     Lwait.clear();
     Rwait.clear();
     Lmate = VI(L.size(), -1);
     Rmate = VI(R.size(), -1);
-    btnkPair = make_pair(-1, -1);
+//    btnkPair = make_pair(-1, -1);
     for (int i = 0, j = 0; i < L.size() || j < R.size(); ) {
         if (j == R.size() || (i != L.size() && L[i][2] < R[j][2])) {
             for (int k = 0; k < Lwait.size(); ++k) {
@@ -112,11 +114,15 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
         else
             printf("%4d", L[Rmate[i]][1]);
     }
+    printf("\n%.3f: < %d, %d >\n", btnk, L[btnkPair.first][1], R[btnkPair.second][1]);
     printf("\n\n");
     return btnk;
 }
 
 bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII& btnkPair, VI& chain) {
+
+    if (L.size() == 0 || R.size() == 0) return false;
+
     int l = btnkPair.first, r = btnkPair.second;
     VVI queue;
     bool update = false;
@@ -169,6 +175,7 @@ bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII
 }
 
 double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    if (L.size() == 0 || R.size() == 0) return 0.;
     double btnk = onlineGreedy(cost, L, R, Lmate, Rmate, btnkPair);
     VI chain;
     while (BFS(cost, L, R, Lmate, Rmate, btnk, btnkPair, chain)) {
@@ -207,7 +214,8 @@ double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btn
         else
             printf("%4d", L[Rmate[i]][1]);
     }
-    printf("\n");
+    printf("\n%.3f: < %d, %d >\n", btnk, L[btnkPair.first][1], R[btnkPair.second][1]);
+    printf("\n\n");
     return btnk;
 }
 
@@ -225,10 +233,8 @@ void initQ() {
 }
 
 int tick(const VVI& seq, VVI& L, VVI& R, int start, int t) {
-    int time = seq[start][2], i = start;
-    int end_time = start + t;
-    while (time < end_time) {
-        time = seq[i][2];
+    int time, i;
+    for (i = start; i < seq.size() && (time = seq[i][2]) < seq[start][2] + t; ++i) {
         if (seq[i][0] == 0) L.push_back(seq[i]);
         else R.push_back(seq[i]);
         if (L.size() >= MAXSIZE) L.erase(L.begin());
@@ -245,13 +251,12 @@ int tick(const VVI& seq, VVI& L, VVI& R, int start, int t) {
                 j--;
             }
         }
-        i++;
-        if (i >= seq.size()) return i;
     }
     return i;
 }
 
 double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
+
     int n = (int) cost.size();
     int l = (int) seq.size();
     double btnk;
@@ -267,17 +272,19 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
     count = LOWER_BOUND;
 
     while (i < l) {
+        printf("----------%d----------\n", i);
         int time = seq[i][2], lt = count;
         size_l = (int) L.size();
         size_r = (int) R.size();
         double temp = Q[size_l][size_r][count - LOWER_BOUND][count - LOWER_BOUND];
-        for (int j = count; j <= LOWER_BOUND; ++j) {
-            if (Q[size_l][size_r][j - LOWER_BOUND][j - LOWER_BOUND] > temp) {
-                temp = Q[size_l][size_r][j - LOWER_BOUND][j - LOWER_BOUND];
+        for (int j = count; j <= UPPER_BOUND; ++j) {
+            if (Q[size_l][size_r][count - LOWER_BOUND][j - LOWER_BOUND] > temp) {
+                temp = Q[size_l][size_r][count - LOWER_BOUND][j - LOWER_BOUND];
                 lt = j;
             }
         }
         if (lt == count) {
+            printf("case 1\n");
             VI Lm, Rm;
             PII pair;
             btnk = swapChain(cost, L, R, Lm, Rm, pair);
@@ -316,6 +323,7 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
             count = LOWER_BOUND;
         }
         else {
+            printf("case 2\n");
             last_l = size_l;
             last_r = size_r;
             i = tick(seq, L, R, i, 1);
@@ -331,6 +339,9 @@ double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate) {
             count++;
         }
     }
+    VI Lm, Rm;
+    PII pair;
+    swapChain(cost, L, R, Lm, Rm, pair);
     return 0;
 }
 

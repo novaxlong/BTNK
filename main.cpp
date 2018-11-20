@@ -8,37 +8,55 @@ using namespace std;
 
 int main(int argc, const char* argv[]) {
 
-    int len = 20, lambda = 3, lowerBound = 10, upperBound = 20;
+    int len = 50, lambda = 3, lowerBound = 10, upperBound = 20;
     double btnk;
     VVI seq, L, R;
     VVD cost;
-
-    generateSequence("../syntheticData/sequence.dat", len, lambda, lowerBound, upperBound);
-    readSequence("../syntheticData/sequence.dat", seq);
-    splitSequence(seq, L, R);
-    generateMatrix("../syntheticData/matrix.dat", L, R);
-    readMatrix("../syntheticData/matrix.dat", len, cost);
+//
+//    generateSequence("../syntheticData/sequence.dat", len, lambda, lowerBound, upperBound);
+//    readSequence("../syntheticData/sequence.dat", seq);
+//    splitSequence(seq, L, R);
+//    generateMatrix("../syntheticData/matrix.dat", L, R);
+//    readMatrix("../syntheticData/matrix.dat", len, cost);
 
     VI Lmate, Rmate;
     PII pair;
+//
+//
+//    printf("Greedy\n");
+//    btnk = onlineGreedy(cost, L, R, Lmate, Rmate, pair);
+//
+//    printf("Optimal\n");
+//    btnk = swapChain(cost, L, R, Lmate, Rmate, pair);
+//
+//    printf("RQL\n");
 
-    VVI LL, RR;
-    for (int i = 0; i < 11; ++i) {
-        LL.push_back(L[i+5]);
+
+//     train function Q.
+
+    freopen("../syntheticData/debug.txt", "w", stdout);
+
+    initQ();
+    for (int i = 0; i < 1000; ++i) {
+        int QLLen = len, QLLambda = lambda, QLLowerBound = lowerBound, QLUpperBound = upperBound;
+        VVI QLSeq, QLL, QLR;
+        VVD QLCost;
+        VI QLLmate, QLRmate;
+        generateSequence("../syntheticData/QLSequence.dat", QLLen, QLLambda, QLLowerBound, QLUpperBound);
+        readSequence("../syntheticData/QLSequence.dat", QLSeq);
+        splitSequence(QLSeq, QLL, QLR);
+        generateMatrix("../syntheticData/QLMatrix.dat", QLL, QLR);
+        readMatrix("../syntheticData/QLMatrix.dat", QLLen, QLCost);
+        RQL(QLCost, QLSeq, QLLmate, QLRmate);
     }
-    for (int i = 0; i < 7; ++i) {
-        RR.push_back(R[i+5]);
-    }
 
-    btnk = onlineGreedy(cost, LL, RR, Lmate, Rmate, pair);
-    printf("%.3f: < %d, %d >\n", btnk, LL[pair.first][1], RR[pair.second][1]);
-    printf("\n\n");
-
-    btnk = swapChain(cost, LL, RR, Lmate, Rmate, pair);
-    printf("%.3f: < %d, %d >\n", btnk, LL[pair.first][1], RR[pair.second][1]);
-    printf("\n\n");
 
     RQL(cost, seq, Lmate, Rmate);
+
+    fclose(stdout);
+    freopen("/dev/console", "w", stdout);
+
+    printf("restore stdout\n");
 
     return 0;
 }
