@@ -8,34 +8,22 @@
 #include "data.h"
 #include <list>
 
-typedef list<node> QN;
 
-class Alg {
+#define UPPER_BOUND 20
+#define LOWER_BOUND 10
+#define MAXSIZE 50
+#define LEN (UPPER_BOUND - LOWER_BOUND + 1)
+#define INIT 1e-4
+#define ALPHA 5e-2
 
-    /**
-     * This class is going to define some algorithms to solve the bottleneck matching
-     * problem, including Greedy, SwapChain, Q_Learning. Besides, I will introduce some
-     * new algorithms to this class if I come up with new ideas. Let's begin!
-     */
+typedef pair<int, int> PII;     // < L_index, R_index >
 
-public:
-    double bottleNeck;
-    pair<int, int> bottleNeckPair;      // < task_id, worker_id >
-    VT taskList, workerMatchedList;
-    VW workerList, taskMatchedList;
 
-    Alg (VT& task, VW& worker);
-    void simpleGreedy();              // use Greedy algorithm to create the matching
-    void swapChain();           // optimal algorithm
-    void qLearning();           // inspired by Mr. Wang
+double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
+double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
 
-private:
-    bool run;
-    vector<bool> checkedWorker;
-    vector<bool> checkedTask;
-    void outputResult(const char *algMethod);
-    bool IBFS(double d, task bottleNeckTask, VN& chain);
-};
-
+void initQ();
+int tick(const VVI& seq, VVI& L, VVI& R, int start, int t);
+double RQL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate);
 
 #endif //BOTTLENECK_ALG_H
