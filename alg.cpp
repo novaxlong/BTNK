@@ -96,6 +96,8 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
     return btnk;
 }
 
+// level 2
+
 double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
     if (L.size() == 0 || R.size() == 0) return 0.;
 
