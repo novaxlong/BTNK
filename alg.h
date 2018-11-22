@@ -19,13 +19,17 @@
 // parameters for CandGreedy
 #define SIZE 10
 
+#define DELTA 0.8000
+#define BETA 0.1000
+#define GAMMA (1. - DELTA - BETA)
+
 typedef pair<int, int> PII;     // < L_index, R_index >
 
 // Simple Greedy
-double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
+double onlineGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
 
 // Candidate Based Greedy
-double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
+double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair);
 
 // Optimal
 bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII& btnkPair, VI& chain);

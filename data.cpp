@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void generateSequence(const char *fileName, int len, int lambda, int lowerBound, int upperBound) {
+void generateSequence(const char *fileName, int len, int lambda) {
     FILE *fp = fopen(fileName, "w");
     if (fp == nullptr) {
         printf("Cannot open file %s\n.", fileName);
@@ -23,7 +23,7 @@ void generateSequence(const char *fileName, int len, int lambda, int lowerBound,
     random_device rd;
     mt19937 gen(rd());
     poisson_distribution<> pd(lambda);
-    uniform_int_distribution<> uid(lowerBound, upperBound);
+    uniform_int_distribution<> uid(LOWER_BOUND_SEQ, UPPER_BOUND_SEQ);
 
     while (num < totalLen) {
         int k = pd(gen), task_k, worker_k;
@@ -62,12 +62,13 @@ void readSequence(const char *fileName, VVI &seq) {
         exit(-1);
     }
     VI temp;
-    int type, id, start, end;
+    int type, id, start, end, matched_time = 0;
     while (fscanf(fp, "%d %d %d %d", &type, &id, &start, &end) == 4) {
-        temp.push_back(type);       // 0
-        temp.push_back(id);         // 1
-        temp.push_back(start);      // 2
-        temp.push_back(end);        // 3
+        temp.push_back(type);           // 0
+        temp.push_back(id);             // 1
+        temp.push_back(start);          // 2
+        temp.push_back(end);            // 3
+        temp.push_back(matched_time);   // 4
         seq.push_back(temp);
         temp.clear();
     }
@@ -78,21 +79,27 @@ void splitSequence(VVI &seq, VVI &L, VVI &R) {
     L.clear();
     R.clear();
     for (int i = 0; i < seq.size(); ++i) {
-        if (seq[i][0] == 0) L.push_back(seq[i]);
-        else R.push_back(seq[i]);
+        if (seq[i][0] == 0)
+            L.push_back(seq[i]);
+        else
+            R.push_back(seq[i]);
     }
 }
 
+/*
+ * Modified on 2018.11.22 by Wang.
+ * TODO: To generate the distance between node_l and node_r.
+ */
 void generateMatrix(const char *fileName, VVI &L, VVI &R) {
     FILE *fp = fopen(fileName, "w");
     if (fp == nullptr) {
         printf("Cannot open file %s\n.", fileName);
         exit(-1);
     }
-    double cost = 0.;
+    double cost;
     random_device rd;
     mt19937 gen(rd());
-    uniform_real_distribution<> urd(0, 1);
+    uniform_real_distribution<> urd(LOWER_BOUND_DIS, UPPER_BOUND_DIS);
 
     for (int i = 0; i < L.size(); ++i) {
         for (int j = 0; j < R.size(); ++j) {
@@ -104,6 +111,11 @@ void generateMatrix(const char *fileName, VVI &L, VVI &R) {
     }
     fclose(fp);
 }
+
+/*
+ * Modified on 2018.11.22 by Wang.
+ * TODO: To read the distance between node_l and node_r.
+ */
 
 void readMatrix(const char *fileName, int len, VVD &mat) {
     FILE *fp = fopen(fileName, "r");

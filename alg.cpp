@@ -7,12 +7,22 @@
 #include "alg.h"
 using namespace std;
 
+extern const VVD cost;
 double Q[MAXSIZE][MAXSIZE][LEN][LEN];
 
-double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
-    if (L.size() == 0 || R.size() == 0) return 0.;
+double dist(const VI& l, const VI& r) {
+    return cost[l[1]][r[1]];
+}
 
-    VI Lwait, Rwait;        // restore the index of the waiting l/r in the L/R
+double weight(const VI& l, const VI& r, int time) {
+    return DELTA * cost[l[1]][r[1]] + BETA * (time - l[2]) + GAMMA * (time - r[2]);
+}
+
+double onlineGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    if (L.size() == 0 || R.size() == 0)
+        return 0;
+
+    VI Lwait, Rwait;
     double btnk = 0.;
     Lwait.clear();
     Rwait.clear();
@@ -21,42 +31,46 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
 
     for (int i = 0, j = 0; i < L.size() || j < R.size(); ) {
         if (j == R.size() || (i != L.size() && L[i][2] < R[j][2])) {
+            int time = L[i][2];
+            // discard the expired node in L
             for (int k = 0; k < Lwait.size(); ++k) {
-                if (L[Lwait[k]][3] < L[i][2]) {
+                if (L[Lwait[k]][3] < time) {
                     printf("Discard task %d.\n", L[Lwait[k]][1]);
                     Lwait.erase(Lwait.begin() + k);
                     k--;
                 }
             }
+            // discard the expired node in R
             for (int k = 0; k < Rwait.size(); ++k) {
-                if (R[Rwait[k]][3] < L[i][2]) {
+                if (R[Rwait[k]][3] < time) {
                     printf("Discard worker %d.\n", R[Rwait[k]][1]);
                     Rwait.erase(Rwait.begin() + k);
                     k--;
                 }
             }
+            // find a waiting node with the smallest cost.
             if (!Rwait.empty()) {
-                double minCost = 1.0;
-                int minIndex = -1, rIndex, kIndex = -1;
+                double value = weight(L[i], R[Rwait[0]], time), temp;
+                int rindex = 0;
                 for (int k = 0; k < Rwait.size(); ++k) {
-                    rIndex = Rwait[k];
-                    if (cost[L[i][1]][R[rIndex][1]] >= 0 && cost[L[i][1]][R[rIndex][1]] <= minCost) {
-                        minCost = cost[L[i][1]][R[rIndex][1]];
-                        minIndex = rIndex;
-                        kIndex = k;
+                    if (dist(L[i], R[Rwait[k]]) != -1. && (temp = weight(L[i], R[Rwait[k]], time)) < value) {
+                        value = temp;
+                        rindex = k;
                     }
                 }
-                Lmate[i] = minIndex;
-                Rmate[minIndex] = i;
-                btnkPair = (btnk > minCost) ? btnkPair : make_pair(i, minIndex);
-                btnk = (btnk > minCost) ? btnk : minCost;
-                Rwait.erase(Rwait.begin() + kIndex);
+                L[i][4] = R[Rwait[rindex]][4] = time;
+                Lmate[i] = Rwait[rindex];
+                Rmate[Rwait[rindex]] = i;
+                btnkPair = (btnk > value) ? btnkPair : make_pair(i, Rwait[rindex]);
+                btnk = (btnk > value) ? btnk : value;
+                Rwait.erase(Rwait.begin() + rindex);
             }
             else
                 Lwait.push_back(i);
             i++;
         }
         else {
+            int time = R[j][2];
             for (int k = 0; k < Lwait.size(); ++k) {
                 if (L[Lwait[k]][3] < R[j][2]) {
                     printf("Discard task %d.\n", L[Lwait[k]][1]);
@@ -72,21 +86,20 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
                 }
             }
             if (!Lwait.empty()) {
-                double minCost = 1.0;
-                int minIndex = -1, lIndex, kIndex = -1;
+                double value = weight(L[Lwait[0]], R[j], time), temp;
+                int lindex = 0;
                 for (int k = 0; k < Lwait.size(); ++k) {
-                    lIndex = Lwait[k];
-                    if (cost[L[lIndex][1]][R[j][1]] >= 0 && cost[L[lIndex][1]][R[j][1]] <= minCost) {
-                        minCost = cost[L[lIndex][1]][R[j][1]];
-                        minIndex = lIndex;
-                        kIndex = k;
+                    if (dist(L[Lwait[k]], R[j]) != -1. && (temp = weight(L[Lwait[k]], R[j], time)) < value) {
+                        value = temp;
+                        lindex = k;
                     }
                 }
-                Lmate[minIndex] = j;
-                Rmate[j] = minIndex;
-                btnkPair = (btnk > minCost) ? btnkPair : make_pair(minIndex, j);
-                btnk = (btnk > minCost) ? btnk : minCost;
-                Lwait.erase(Lwait.begin() + kIndex);
+                L[Lwait[lindex]][4] = R[j][4] = time;
+                Lmate[Lwait[lindex]] = j;
+                Rmate[j] = Lwait[lindex];
+                btnkPair = (btnk > value) ? btnkPair : make_pair(Lwait[lindex], j);
+                btnk = (btnk > value) ? btnk : value;
+                Lwait.erase(Lwait.begin() + lindex);
             }
             else
                 Rwait.push_back(j);
@@ -96,10 +109,9 @@ double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& 
     return btnk;
 }
 
-// level 2
 
-double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
-    if (L.size() == 0 || R.size() == 0) return 0.;
+double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+    if (L.size() == 0 || R.size() == 0) return 0;
 
     VI Lwait, Rwait;
     double btnk = 0., _btnk;
@@ -113,18 +125,19 @@ double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& bt
             int time = L[i][2];
             for (int k = 0; k < Lwait.size(); ++k) {
                 if (L[Lwait[k]][3] == time) {
+                    double value = weight(L[Lwait[k]], R[Rwait[0]], time), temp;
                     int rindex = 0;
-                    double temp = cost[L[Lwait[k]][1]][R[Rwait[0]][1]];
                     for (int p = 0; p < Rwait.size(); ++p) {
-                        if (cost[L[Lwait[k]][1]][R[Rwait[p]][1]] >= 0 && cost[L[Lwait[k]][1]][R[Rwait[p]][1]] < temp) {
-                            temp = cost[L[Lwait[k]][1]][R[Rwait[p]][1]];
+                        if (dist(L[Lwait[k]], R[Rwait[p]]) != -1 && (temp = weight(L[Lwait[k]], R[Rwait[p]], time)) < value) {
+                            value = temp;
                             rindex = p;
                         }
                     }
-                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[k]][1], R[Rwait[rindex]][1]);
-                    btnk = (btnk > temp) ? btnk : temp;
+                    L[Lwait[k]][4] = R[Rwait[rindex]][4] = time;
                     Lmate[Lwait[k]] = Rwait[rindex];
                     Rmate[Rwait[rindex]] = Lwait[k];
+                    btnkPair = (btnk > value) ? btnkPair : make_pair(L[Lwait[k]][1], R[Rwait[rindex]][1]);
+                    btnk = (btnk > value) ? btnk : value;
                     Lwait.erase(Lwait.begin() + k);
                     Rwait.erase(Rwait.begin() + rindex);
                     k--;
@@ -132,36 +145,38 @@ double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& bt
             }
             for (int k = 0; k < Rwait.size(); ++k) {
                 if (R[Rwait[k]][3] == time) {
+                    double value = weight(L[Lwait[0]], R[Rwait[k]], time), temp;
                     int lindex = 0;
-                    double temp = cost[L[Lwait[0]][1]][R[Rwait[k]][1]];
                     for (int p = 0; p < Lwait.size(); ++p) {
-                        if (cost[L[Lwait[p]][1]][R[Rwait[k]][1]] >= 0 && cost[L[Lwait[p]][1]][R[Rwait[k]][1]] < temp) {
-                            temp = cost[L[Lwait[p]][1]][R[Rwait[k]][1]];
+                        if (dist(L[Lwait[p]], R[Rwait[k]]) != -1 && (temp = weight(L[Lwait[p]], R[Rwait[k]], time)) < value) {
+                            value = temp;
                             lindex = p;
                         }
                     }
-                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[Rwait[k]][1]);
-                    btnk = (btnk > temp) ? btnk : temp;
+                    L[Lwait[lindex]][4] = R[Rwait[k]][4] = time;
                     Lmate[Lwait[lindex]] = Rwait[k];
                     Rmate[Rwait[k]] = Lwait[lindex];
+                    btnkPair = (btnk > value) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[Rwait[k]][1]);
+                    btnk = (btnk > value) ? btnk : value;
                     Lwait.erase(Lwait.begin() + lindex);
                     Rwait.erase(Rwait.begin() + k);
                     k--;
                 }
             }
             if (Rwait.size() == SIZE) {
+                double value = weight(L[i], R[Rwait[0]], time), temp;
                 int rindex = 0;
-                double temp = cost[L[i][1]][R[Rwait[0]][1]];
                 for (int k = 0; k < Rwait.size(); ++k) {
-                    if (cost[L[i][1]][R[Rwait[k]][1]] >= 0 && cost[L[i][1]][R[Rwait[k]][1]] < temp) {
-                        temp = cost[L[i][1]][R[Rwait[k]][1]];
+                    if (dist(L[i], R[Rwait[k]]) != -1 && (temp = weight(L[i], R[Rwait[k]], time)) < value) {
+                        value = temp;
                         rindex = k;
                     }
                 }
-                btnkPair = (btnk > temp) ? btnkPair : make_pair(L[i][1], R[Rwait[rindex]][1]);
-                btnk = (btnk > temp) ? btnk : temp;
+                L[i][4] = R[Rwait[rindex]][4] = time;
                 Lmate[i] = Rwait[rindex];
                 Rmate[Rwait[rindex]] = i;
+                btnkPair = (btnk > value) ? btnkPair : make_pair(L[i][1], R[Rwait[rindex]][1]);
+                btnk = (btnk > value) ? btnk : value;
                 Rwait.erase(Rwait.begin() + rindex);
             }
             else
@@ -172,18 +187,19 @@ double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& bt
             int time = R[j][2];
             for (int k = 0; k < Lwait.size(); ++k) {
                 if (L[Lwait[k]][3] == time) {
+                    double value = weight(L[Lwait[k]], R[Rwait[0]], time), temp;
                     int rindex = 0;
-                    double temp = cost[L[Lwait[k]][1]][R[Rwait[0]][1]];
                     for (int p = 0; p < Rwait.size(); ++p) {
-                        if (cost[L[Lwait[k]][1]][R[Rwait[p]][1]] >= 0 && cost[L[Lwait[k]][1]][R[Rwait[p]][1]] < temp) {
-                            temp = cost[L[Lwait[k]][1]][R[Rwait[p]][1]];
+                        if (dist(L[Lwait[k]], R[Rwait[p]]) != -1 && (temp = weight(L[Lwait[k]], R[Rwait[p]], time)) < value) {
+                            value = temp;
                             rindex = p;
                         }
                     }
-                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[k]][1], R[Rwait[rindex]][1]);
-                    btnk = (btnk > temp) ? btnk : temp;
+                    L[Lwait[k]][4] = R[Rwait[rindex]][4] = time;
                     Lmate[Lwait[k]] = Rwait[rindex];
                     Rmate[Rwait[rindex]] = Lwait[k];
+                    btnkPair = (btnk > value) ? btnkPair : make_pair(L[Lwait[k]][1], R[Rwait[rindex]][1]);
+                    btnk = (btnk > value) ? btnk : value;
                     Lwait.erase(Lwait.begin() + k);
                     Rwait.erase(Rwait.begin() + rindex);
                     k--;
@@ -191,36 +207,38 @@ double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& bt
             }
             for (int k = 0; k < Rwait.size(); ++k) {
                 if (R[Rwait[k]][3] == time) {
+                    double value = weight(L[Lwait[0]], R[Rwait[k]], time), temp;
                     int lindex = 0;
-                    double temp = cost[L[Lwait[0]][1]][R[Rwait[k]][1]];
                     for (int p = 0; p < Lwait.size(); ++p) {
-                        if (cost[L[Lwait[p]][1]][R[Rwait[k]][1]] >= 0 && cost[L[Lwait[p]][1]][R[Rwait[k]][1]] < temp) {
-                            temp = cost[L[Lwait[p]][1]][R[Rwait[k]][1]];
+                        if (dist(L[Lwait[p]], R[Rwait[k]]) != -1 && (temp = weight(L[Lwait[p]], R[Rwait[k]], time)) < value) {
+                            value = temp;
                             lindex = p;
                         }
                     }
-                    btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[Rwait[k]][1]);
-                    btnk = (btnk > temp) ? btnk : temp;
+                    L[Lwait[lindex]][4] = R[Rwait[k]][4] = time;
                     Lmate[Lwait[lindex]] = Rwait[k];
                     Rmate[Rwait[k]] = Lwait[lindex];
+                    btnkPair = (btnk > value) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[Rwait[k]][1]);
+                    btnk = (btnk > value) ? btnk : value;
                     Lwait.erase(Lwait.begin() + lindex);
                     Rwait.erase(Rwait.begin() + k);
                     k--;
                 }
             }
             if (Lwait.size() == SIZE) {
+                double value = weight(L[Lwait[0]], R[j], time), temp;
                 int lindex = 0;
-                double temp = cost[L[Lwait[0]][1]][R[j][1]];
                 for (int k = 0; k < Lwait.size(); ++k) {
-                    if (cost[L[Lwait[k]][1]][R[j][1]] >= 0 && cost[L[Lwait[k]][1]][R[j][1]] < temp) {
-                        temp = cost[L[Lwait[k]][1]][R[j][1]];
+                    if (dist(L[Lwait[k]], R[j]) != -1 && (temp = weight(L[Lwait[k]], R[j], time)) < value) {
+                        value = temp;
                         lindex = k;
                     }
                 }
-                btnkPair = (btnk > temp) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[j][1]);
-                btnk = (btnk > temp) ? btnk : temp;
+                L[Lwait[lindex]][4] = R[j][4] = time;
                 Lmate[Lwait[lindex]] = j;
                 Rmate[j] = Lwait[lindex];
+                btnkPair = (btnk > value) ? btnkPair : make_pair(L[Lwait[lindex]][1], R[j][1]);
+                btnk = (btnk > value) ? btnk : value;
                 Lwait.erase(Lwait.begin() + lindex);
             }
             else
@@ -228,22 +246,22 @@ double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& bt
             j++;
         }
     }
-    VVI LL, RR;
-    VI Lm, Rm;
-    PII pair;
-    for (int i = 0; i < Lwait.size(); ++i) {
-        LL.push_back(L[Lwait[i]]);
-    }
-    for (int i = 0; i < Rwait.size(); ++i) {
-        RR.push_back(R[Rwait[i]]);
-    }
-    _btnk = swapChain(cost, LL, RR, Lm, Rm, pair);
-    btnkPair = (btnk > _btnk) ? btnkPair : make_pair(LL[pair.first][1], RR[pair.second][1]);
-    btnk = (btnk > _btnk) ? btnk : _btnk;
-    for (int i = 0; i < Lm.size(); ++i) {
-        Lmate[LL[i][1]] = RR[Lm[i]][1];
-        Rmate[RR[Lm[i]][1]] = LL[i][1];
-    }
+//    VVI LL, RR;
+//    VI Lm, Rm;
+//    PII pair;
+//    for (int i = 0; i < Lwait.size(); ++i) {
+//        LL.push_back(L[Lwait[i]]);
+//    }
+//    for (int i = 0; i < Rwait.size(); ++i) {
+//        RR.push_back(R[Rwait[i]]);
+//    }
+//    _btnk = swapChain(cost, LL, RR, Lm, Rm, pair);
+//    btnkPair = (btnk > _btnk) ? btnkPair : make_pair(LL[pair.first][1], RR[pair.second][1]);
+//    btnk = (btnk > _btnk) ? btnk : _btnk;
+//    for (int i = 0; i < Lm.size(); ++i) {
+//        Lmate[LL[i][1]] = RR[Lm[i]][1];
+//        Rmate[RR[Lm[i]][1]] = LL[i][1];
+//    }
     return btnk;
 }
 
@@ -302,7 +320,7 @@ bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII
 
 double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
     if (L.size() == 0 || R.size() == 0) return 0.;
-    double btnk = onlineGreedy(cost, L, R, Lmate, Rmate, btnkPair);
+    double btnk = onlineGreedy(L, R, Lmate, Rmate, btnkPair);
     VI chain;
     while (BFS(cost, L, R, Lmate, Rmate, btnk, btnkPair, chain)) {
         for (int i = 0; i < chain.size(); ++i) {
