@@ -7,18 +7,17 @@
 #include "alg.h"
 using namespace std;
 
-extern const VVD cost;
 double Q[MAXSIZE][MAXSIZE][LEN][LEN];
 
-double dist(const VI& l, const VI& r) {
+double dist(const VVD& cost, const VI& l, const VI& r) {
     return cost[l[1]][r[1]];
 }
 
-double weight(const VI& l, const VI& r, int time) {
+double weight(const VVD& cost, const VI& l, const VI& r, int time) {
     return DELTA * cost[l[1]][r[1]] + BETA * (time - l[2]) + GAMMA * (time - r[2]);
 }
 
-double onlineGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+double onlineGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
     if (L.size() == 0 || R.size() == 0)
         return 0;
 
@@ -50,10 +49,10 @@ double onlineGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
             }
             // find a waiting node with the smallest cost.
             if (!Rwait.empty()) {
-                double value = weight(L[i], R[Rwait[0]], time), temp;
+                double value = weight(cost, L[i], R[Rwait[0]], time), temp;
                 int rindex = 0;
                 for (int k = 0; k < Rwait.size(); ++k) {
-                    if (dist(L[i], R[Rwait[k]]) != -1. && (temp = weight(L[i], R[Rwait[k]], time)) < value) {
+                    if (dist(cost, L[i], R[Rwait[k]]) != -1. && (temp = weight(cost, L[i], R[Rwait[k]], time)) < value) {
                         value = temp;
                         rindex = k;
                     }
@@ -86,10 +85,10 @@ double onlineGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
                 }
             }
             if (!Lwait.empty()) {
-                double value = weight(L[Lwait[0]], R[j], time), temp;
+                double value = weight(cost, L[Lwait[0]], R[j], time), temp;
                 int lindex = 0;
                 for (int k = 0; k < Lwait.size(); ++k) {
-                    if (dist(L[Lwait[k]], R[j]) != -1. && (temp = weight(L[Lwait[k]], R[j], time)) < value) {
+                    if (dist(cost, L[Lwait[k]], R[j]) != -1. && (temp = weight(cost, L[Lwait[k]], R[j], time)) < value) {
                         value = temp;
                         lindex = k;
                     }
@@ -110,7 +109,7 @@ double onlineGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
 }
 
 
-double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+double CandGreedy(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
     if (L.size() == 0 || R.size() == 0) return 0;
 
     VI Lwait, Rwait;
@@ -125,10 +124,10 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
             int time = L[i][2];
             for (int k = 0; k < Lwait.size(); ++k) {
                 if (L[Lwait[k]][3] == time) {
-                    double value = weight(L[Lwait[k]], R[Rwait[0]], time), temp;
+                    double value = weight(cost, L[Lwait[k]], R[Rwait[0]], time), temp;
                     int rindex = 0;
                     for (int p = 0; p < Rwait.size(); ++p) {
-                        if (dist(L[Lwait[k]], R[Rwait[p]]) != -1 && (temp = weight(L[Lwait[k]], R[Rwait[p]], time)) < value) {
+                        if (dist(cost, L[Lwait[k]], R[Rwait[p]]) != -1 && (temp = weight(cost, L[Lwait[k]], R[Rwait[p]], time)) < value) {
                             value = temp;
                             rindex = p;
                         }
@@ -145,10 +144,10 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
             }
             for (int k = 0; k < Rwait.size(); ++k) {
                 if (R[Rwait[k]][3] == time) {
-                    double value = weight(L[Lwait[0]], R[Rwait[k]], time), temp;
+                    double value = weight(cost, L[Lwait[0]], R[Rwait[k]], time), temp;
                     int lindex = 0;
                     for (int p = 0; p < Lwait.size(); ++p) {
-                        if (dist(L[Lwait[p]], R[Rwait[k]]) != -1 && (temp = weight(L[Lwait[p]], R[Rwait[k]], time)) < value) {
+                        if (dist(cost, L[Lwait[p]], R[Rwait[k]]) != -1 && (temp = weight(cost, L[Lwait[p]], R[Rwait[k]], time)) < value) {
                             value = temp;
                             lindex = p;
                         }
@@ -164,10 +163,10 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
                 }
             }
             if (Rwait.size() == SIZE) {
-                double value = weight(L[i], R[Rwait[0]], time), temp;
+                double value = weight(cost, L[i], R[Rwait[0]], time), temp;
                 int rindex = 0;
                 for (int k = 0; k < Rwait.size(); ++k) {
-                    if (dist(L[i], R[Rwait[k]]) != -1 && (temp = weight(L[i], R[Rwait[k]], time)) < value) {
+                    if (dist(cost, L[i], R[Rwait[k]]) != -1 && (temp = weight(cost, L[i], R[Rwait[k]], time)) < value) {
                         value = temp;
                         rindex = k;
                     }
@@ -187,10 +186,10 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
             int time = R[j][2];
             for (int k = 0; k < Lwait.size(); ++k) {
                 if (L[Lwait[k]][3] == time) {
-                    double value = weight(L[Lwait[k]], R[Rwait[0]], time), temp;
+                    double value = weight(cost, L[Lwait[k]], R[Rwait[0]], time), temp;
                     int rindex = 0;
                     for (int p = 0; p < Rwait.size(); ++p) {
-                        if (dist(L[Lwait[k]], R[Rwait[p]]) != -1 && (temp = weight(L[Lwait[k]], R[Rwait[p]], time)) < value) {
+                        if (dist(cost, L[Lwait[k]], R[Rwait[p]]) != -1 && (temp = weight(cost, L[Lwait[k]], R[Rwait[p]], time)) < value) {
                             value = temp;
                             rindex = p;
                         }
@@ -207,10 +206,10 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
             }
             for (int k = 0; k < Rwait.size(); ++k) {
                 if (R[Rwait[k]][3] == time) {
-                    double value = weight(L[Lwait[0]], R[Rwait[k]], time), temp;
+                    double value = weight(cost, L[Lwait[0]], R[Rwait[k]], time), temp;
                     int lindex = 0;
                     for (int p = 0; p < Lwait.size(); ++p) {
-                        if (dist(L[Lwait[p]], R[Rwait[k]]) != -1 && (temp = weight(L[Lwait[p]], R[Rwait[k]], time)) < value) {
+                        if (dist(cost, L[Lwait[p]], R[Rwait[k]]) != -1 && (temp = weight(cost, L[Lwait[p]], R[Rwait[k]], time)) < value) {
                             value = temp;
                             lindex = p;
                         }
@@ -226,10 +225,10 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
                 }
             }
             if (Lwait.size() == SIZE) {
-                double value = weight(L[Lwait[0]], R[j], time), temp;
+                double value = weight(cost, L[Lwait[0]], R[j], time), temp;
                 int lindex = 0;
                 for (int k = 0; k < Lwait.size(); ++k) {
-                    if (dist(L[Lwait[k]], R[j]) != -1 && (temp = weight(L[Lwait[k]], R[j], time)) < value) {
+                    if (dist(cost, L[Lwait[k]], R[j]) != -1 && (temp = weight(cost, L[Lwait[k]], R[j], time)) < value) {
                         value = temp;
                         lindex = k;
                     }
@@ -246,32 +245,33 @@ double CandGreedy(VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
             j++;
         }
     }
-//    VVI LL, RR;
-//    VI Lm, Rm;
-//    PII pair;
-//    for (int i = 0; i < Lwait.size(); ++i) {
-//        LL.push_back(L[Lwait[i]]);
-//    }
-//    for (int i = 0; i < Rwait.size(); ++i) {
-//        RR.push_back(R[Rwait[i]]);
-//    }
-//    _btnk = swapChain(cost, LL, RR, Lm, Rm, pair);
-//    btnkPair = (btnk > _btnk) ? btnkPair : make_pair(LL[pair.first][1], RR[pair.second][1]);
-//    btnk = (btnk > _btnk) ? btnk : _btnk;
-//    for (int i = 0; i < Lm.size(); ++i) {
-//        Lmate[LL[i][1]] = RR[Lm[i]][1];
-//        Rmate[RR[Lm[i]][1]] = LL[i][1];
-//    }
+    VVI LL, RR;
+    VI Lm, Rm;
+    PII pair;
+    for (int i = 0; i < Lwait.size(); ++i) {
+        LL.push_back(L[Lwait[i]]);
+    }
+    for (int i = 0; i < Rwait.size(); ++i) {
+        RR.push_back(R[Rwait[i]]);
+    }
+    _btnk = swapChain(cost, LL, RR, Lm, Rm, pair);
+    btnkPair = (btnk > _btnk) ? btnkPair : make_pair(LL[pair.first][1], RR[pair.second][1]);
+    btnk = (btnk > _btnk) ? btnk : _btnk;
+    for (int i = 0; i < Lm.size(); ++i) {
+        if (Lm[i] == -1) continue;
+        Lmate[LL[i][1]] = RR[Lm[i]][1];
+        Rmate[RR[Lm[i]][1]] = LL[i][1];
+    }
     return btnk;
 }
 
-bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII& btnkPair, VI& chain) {
+bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII& btnkPair, VI& chain, int t) {
     if (L.size() == 0 || R.size() == 0) return false;
     int l = btnkPair.first, r = btnkPair.second;
-    VVI queue;
     bool update = false;
+    VVI queue;
     VI dad(R.size());
-    vector<bool> seen = vector<bool>(R.size(), false);
+    VB seen(R.size(), false);
 
     VI temp = {0, btnkPair.first};
     queue.push_back(temp);
@@ -282,7 +282,8 @@ bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII
         VI head = queue[0];
         if (head[0] == 0) {
             for (int i = 0; i < R.size(); ++i) {
-                if (!seen[i] && cost[L[head[1]][1]][R[i][1]] >= 0 && cost[L[head[1]][1]][R[i][1]] < btnk) {
+                int time = (t == -1) ? max(L[head[1]][2], R[i][2]) : t;
+                if (!seen[i] && dist(cost, L[head[1]], R[i]) != -1 && weight(cost, L[head[1]], R[i], time) < btnk) {
                     dad[i] = head[1];
                     seen[i] = true;
                     temp = {1, i};
@@ -318,11 +319,11 @@ bool BFS(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, double btnk, PII
     return false;
 }
 
-double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair) {
+double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btnkPair, int t) {
     if (L.size() == 0 || R.size() == 0) return 0.;
-    double btnk = onlineGreedy(L, R, Lmate, Rmate, btnkPair);
+    double btnk = onlineGreedy(cost, L, R, Lmate, Rmate, btnkPair);
     VI chain;
-    while (BFS(cost, L, R, Lmate, Rmate, btnk, btnkPair, chain)) {
+    while (BFS(cost, L, R, Lmate, Rmate, btnk, btnkPair, chain, t)) {
         for (int i = 0; i < chain.size(); ++i) {
             if (i & 1) {
                 Lmate[chain[i]] = chain[i-1];
@@ -332,8 +333,10 @@ double swapChain(const VVD& cost, VVI& L, VVI& R, VI& Lmate, VI& Rmate, PII& btn
         btnk = 0.;
         for (int i = 0; i < Lmate.size(); ++i) {
             if (Lmate[i] == -1) continue;
-            btnkPair = (btnk > cost[L[i][1]][R[Lmate[i]][1]] ? btnkPair : make_pair(i, Lmate[i]));
-            btnk = (btnk > cost[L[i][1]][R[Lmate[i]][1]] ? btnk : cost[L[i][1]][R[Lmate[i]][1]]);
+            int time = (t == -1) ? max(L[i][2], R[Lmate[i]][2]) : t;
+            double _btnk = weight(cost, L[i], R[Lmate[i]], time);
+            btnkPair = (btnk > _btnk ? btnkPair : make_pair(i, Lmate[i]));
+            btnk = (btnk > _btnk) ? btnk : _btnk;
         }
         chain.clear();
     }
@@ -376,9 +379,10 @@ int tick(const VVI& seq, VVI& L, VVI& R, int start, int t) {
     return i;
 }
 
+
 void RQL(const VVD& cost, VVI& seq) {
     int l = (int) seq.size();
-    double btnk;
+    double btnk = 0., _btnk;
     VVI L, R;
 
     L.clear();
@@ -402,14 +406,15 @@ void RQL(const VVD& cost, VVI& seq) {
         if (lt == count) {
             VI Lm, Rm;
             PII pair;
-            btnk = swapChain(cost, L, R, Lm, Rm, pair);
+            _btnk = swapChain(cost, L, R, Lm, Rm, pair, time);
+            btnk = (btnk > _btnk) ? btnk : _btnk;
             for (int j = 0; j < Lm.size(); ++j) {
                 if (Lm[j] == -1) continue;
-                if (cost[L[j][1]][R[Lm[j]][1]] != -1.) R[Lm[j]][0] = -1;
+                if (dist(cost, L[j], R[Lm[j]]) != -1.) R[Lm[j]][0] = -1;
             }
             for (int j = 0; j < Rm.size(); ++j) {
                 if (Rm[j] == -1) continue;
-                if (cost[L[Rm[j]][1]][R[j][1]] != -1.) L[Rm[j]][0] = -1;
+                if (dist(cost, L[Rm[j]], R[j]) != -1.) L[Rm[j]][0] = -1;
             }
             for (int j = 0; j < L.size(); ++j) {
                 if (time > L[j][3] || L[j][0] == -1) {
@@ -434,7 +439,7 @@ void RQL(const VVD& cost, VVI& seq) {
                     maxQ = Q[size_l][size_r][0][j];
                 }
             }
-            Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND] += ALPHA * (1./btnk + maxQ - Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND]);
+            Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND] += ALPHA * (1.0 / btnk + maxQ - Q[last_l][last_r][count - LOWER_BOUND][lt - LOWER_BOUND]);
             count = LOWER_BOUND;
         }
         else {
@@ -484,12 +489,12 @@ double QL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate, PII& btnkPair) {
         if (lt == count) {
             VI Lm, Rm;
             PII pair;
-            _btnk = swapChain(cost, L, R, Lm, Rm, pair);
+            _btnk = swapChain(cost, L, R, Lm, Rm, pair, time);
             btnkPair = (btnk > _btnk) ? btnkPair : make_pair(L[pair.first][1], R[pair.second][1]);
             btnk = (btnk > _btnk) ? btnk : _btnk;
             for (int j = 0; j < Lm.size(); ++j) {
                 if (Lm[j] == -1) continue;
-                if (cost[L[j][1]][R[Lm[j]][1]] != -1.)  {
+                if (dist(cost, L[j], R[Lm[j]]) != -1.)  {
                     Lmate[L[j][1]] = R[Lm[j]][1];
                     Rmate[R[Lm[j]][1]] = L[j][1];
                     R[Lm[j]][0] = -1;
@@ -497,7 +502,7 @@ double QL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate, PII& btnkPair) {
             }
             for (int j = 0; j < Rm.size(); ++j) {
                 if (Rm[j] == -1) continue;
-                if (cost[L[Rm[j]][1]][R[j][1]] != -1.) {
+                if (dist(cost, L[Rm[j]], R[j]) != -1.) {
                     Lmate[L[Rm[j]][1]] = R[j][1];
                     Rmate[R[j][1]] = L[Rm[j]][1];
                     L[Rm[j]][0] = -1;
@@ -530,7 +535,7 @@ double QL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate, PII& btnkPair) {
     btnk = (btnk > _btnk) ? btnk : _btnk;
     for (int j = 0; j < Lm.size(); ++j) {
         if (Lm[j] == -1) continue;
-        if (cost[L[j][1]][R[Lm[j]][1]] != -1.)  {
+        if (dist(cost, L[j], R[Lm[j]]) != -1.)  {
             Lmate[L[j][1]] = R[Lm[j]][1];
             Rmate[R[Lm[j]][1]] = L[j][1];
             R[Lm[j]][0] = -1;
@@ -538,7 +543,7 @@ double QL(const VVD& cost, VVI& seq, VI& Lmate, VI& Rmate, PII& btnkPair) {
     }
     for (int j = 0; j < Rm.size(); ++j) {
         if (Rm[j] == -1) continue;
-        if (cost[L[Rm[j]][1]][R[j][1]] != -1.) {
+        if (dist(cost, L[Rm[j]], R[j]) != -1.) {
             Lmate[L[Rm[j]][1]] = R[j][1];
             Rmate[R[j][1]] = L[Rm[j]][1];
             L[Rm[j]][0] = -1;

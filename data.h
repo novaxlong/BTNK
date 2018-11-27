@@ -23,6 +23,7 @@ typedef vector<int> VI;
 typedef vector<VI> VVI;
 typedef vector<double> VD;
 typedef vector<VD> VVD;
+typedef vector<bool> VB;
 
 void generateSequence(const char *fileName, int len, int lambda);
 void readSequence(const char *fileName, VVI& seq);
